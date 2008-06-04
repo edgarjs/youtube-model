@@ -1,0 +1,57 @@
+==Sinopsis
+YouTubeModel allows you to generate an ActiveResource model ready to interact with the You Tube API.
+
+==Repository
+    git://github.com/edgarjs/youtube-model.git
+
+==Home
+    http://mimbles.net
+
+==Installing
+    ./script/plugin install http://svn.mimbles.net/rails/plugins/you_tube_model
+
+==Using the plugin
+To generate the You Tube model just run this generator passing the model name:
+
+    ./script/generate youtube_model MyModelName
+
+Then you are ready. You can retrieve video information from You Tube.
+
+==Examples
+
+Let's say you generated a youtube_model named YouTube...
+
+To search for videos use the method +find+:
+    YouTube.find('my search query here')
+
+Or you can retrieve the videos uploaded by a user passing the username as param:
+    YouTube.uploaded_by('someusername')
+
+Or if you want to get the top rated videos for today:
+    YouTube.top_rated(:today)
+
+In these examples you will get an object as result even if there are more than one
+video in the result. This is because the object is "parsed" from the xml respond.
+
+So if you read the {YouTube API}[http://code.google.com/apis/youtube/developers_guide_protocol.html]
+you'll see the proper way to get the information
+you want. Just to make the start easy, you can get the videos with the method
++video+ or +videos+ (that actually is just an easy-to-remember name for +entry+).
+
+    # controller:
+    @yt = YouTube.find('ruby on rails', :orderby => :rating) # this is a YouTube object
+
+    # view:
+    <h1><%= @yt.title %></h1>
+    <%# And @yt.videos returns an array (if there're more than 1) of YouTube#Entry %>
+    <% @yt.videos.each do |video| -%>
+	<%= youtube_embed video %>
+    <% end -%>
+
+As you can see, you use the helper <tt>youtube_embed</tt> to display the video.
+
+==Credits
+* _Version_: 0.2.2 beta
+* _Author_: Edgar J. Suarez Heredia [aka Garoga]
+* _Feedback_: mailto:edgar.js@gmail.com
+* _License_: MIT (Rails)
