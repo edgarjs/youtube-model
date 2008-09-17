@@ -1,0 +1,84 @@
+h1. YouTube Model
+
+This plugin allows you to interact with the new YouTube API (yes, that means uploading is now featured)
+through a simple ActiveResource model.
+
+h2. Patch for Rails 2.1.1
+
+There was a change in Rails 2.1.1 that causes a **406 Not Acceptable HTTP error**. There is a patch
+to solve this though.
+
+Just apply the patch to your frozen copy of rails:
+
+  curl http://rails.lighthouseapp.com/attachments/46005/accept_http_header.diff | git am
+
+See details "here":http://groups.google.com/group/rubyonrails-core/browse_thread/thread/38a853b997202b3
+
+*********************************************************************
+
+h2. Repository
+
+Find it at "http://github.com/edgarjs/youtube-model":http://github.com/edgarjs/youtube-model
+
+h2. Documentation
+
+h3. Installing
+
+Simply as:
+
+  ./script/plugin install git://github.com/edgarjs/youtube-model.git
+
+h3. Generating the model
+
+The plugin includes a generator to create a model based on ActiveResource
+
+  ./script/generate youtube_model <ModelName>
+
+This generator will create a file under the app/models directory. It is not an ActiveRecord model but an
+ActiveResource. (To see more about ActiveResource check out the
+"Rails API":http://api.rubyonrails.org/classes/ActiveResource.html
+
+h3. Listing videos
+
+Let's say you generated a model named YouTube. So now you can use that model very similar
+to an ActiveRecord model.
+
+To search for videos passing a simple query use the method @find@
+
+  YouTube.find('rails conference 2008')
+
+To get the videos uploaded by a user you can use the method @uploaded_by@ passing the username
+
+  YouTube.uploaded_by('envyads')
+
+And so on. To see the full list of available methods see the "Wikis":http://github.com/edgarjs/youtube-model/wikis
+
+All methods will return an instance of @Entry@. The @Entry@ object encapsulates information about a video, playlist,
+suscription, contact or other entity. This class is parsed from the @<entry>@ tag of the xml response, wich is the root
+tag in all YouTube data API requests. (To see more about the structure of the xml response go
+to the "YouTube API":http://code.google.com/apis/youtube/developers_guide_protocol.html#Understanding_Video_Entries
+
+The returned Entry instance has a main mehod: **video** (alias for **videos**), wich is an easy-to-remember alias for @entry@.
+
+**Example**
+
+  <pre><code>
+  # controller:
+  @tube = YouTube.find('ruby on rails', :max_results => 5)
+  
+  # view:
+  <h1><%= @tube.title %></h1>
+  <% @tube.videos.each do |video| -%>
+    <%= youtube_embed video %>
+  <% end -%>
+  </code></pre>
+
+As you can see, the @youtube_embed@ method is used to display a video.
+
+h3. Uploading videos
+
+TODO
+
+h2. Feedback
+
+I'll really appreciate your feedback, please contact me at edgar.js@gmail.com

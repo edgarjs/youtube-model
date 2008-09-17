@@ -5,21 +5,25 @@ module Mimbles # :nodoc:
     end
     
     module ClassMethods
-      # Call this method to make an ActiveResource model ready to roll with
-      # YouTube
+      # Call this method to make an ActiveResource model ready to roll with YouTube
       def acts_as_youtube_model
         self.site = "http://gdata.youtube.com/feeds/api"
+        self.timeout = 5
+        
         extend Mimbles::YouTubeModel::SingletonMethods
         include Mimbles::YouTubeModel::InstanceMethods
       end
     end
     
     module InstanceMethods
-      # Just another name for +entry+
+      # Returns an array of +entry+, or an empty array when there's no such +entry+
       def videos
-        self.entry if respond_to?(:entry)
+        if respond_to?(:entry)
+          entry.is_a?(Array) ? entry : [entry]
+        else
+          []
+        end
       end
-      alias video videos
     end
     
     module SingletonMethods
@@ -146,8 +150,7 @@ module Mimbles # :nodoc:
         request(video.link[1].href)
       end
   
-      # Find a video through a search query.
-      # Options are:
+      # Find a video through a search query. Options are:
       # * :orderby (:relevance, :published, :viewCount, :rating)
       # * :start_index
       # * :max_results
@@ -157,10 +160,11 @@ module Mimbles # :nodoc:
       # * :restriction
       # 
       # See options details at {YouTube API}[http://code.google.com/apis/youtube/developers_guide_protocol.html#Searching_for_Videos]
-      #   
+      # 
       # Note: +alt+ option is still in researching because it causes some errors.
       def find(query, options = {})
         options[:vq] = CGI::escape(query)
+        options[:orderby] ||= :relevance
         options.delete(:alt) # causes some errors
         params = {}
         options.each{ |k, v| params[k.to_s.dasherize] = v.to_s }
@@ -169,8 +173,8 @@ module Mimbles # :nodoc:
 
       # Search for a specific video by its ID.
       #   http://www.youtube.com/watch?v=JMDcOViViNY
-      # Here the id is: *JMDcOViViNY*
-      # NOTE: this method returns the video itself, no need to call @yt.video
+      # Here the id is: *JMDcOViViNY* NOTE: this method returns the video itself,
+      # no need to call @yt.video
       def find_by_id(id)
         request("videos/#{id}")
       end
@@ -180,7 +184,26 @@ module Mimbles # :nodoc:
       # Loads a response into a new Object of this class
       def request(url)
         url = "#{self.prefix}#{url}" unless url =~ /\Ahttp:/
-        new.load(connection.get(url))
+        new.load(extend_attributes(connection.get(url)))
+      end
+    
+      private
+  
+      # Adds some extra keys to the +attributes+ hash
+      def extend_attributes(yt)
+        unless yt['entry'].nil?
+          (yt['entry'].is_a?(Array) ? yt['entry'] : [yt['entry']]).each { |v| scan_id(v) }
+        else
+          scan_id(yt)
+        end
+        yt
+      end
+    
+      # Renames the +id+ key to +api_id+ and leaves the simple video id on the +id+ key
+      def scan_id(attrs)
+        attrs['api_id'] = attrs['id']
+        attrs['id'] = attrs['api_id'].scan(/[\w-]+$/).to_s
+        attrs
       end
     end
   end

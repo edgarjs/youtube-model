@@ -27,7 +27,6 @@ module Mimbles # :nodoc:
       #     <p><%= youtube_embed video, :border => true %></p>
       #   <% end -%>
       def youtube_embed(video, options = {})
-        id = video.id.scan(/\w+$/).to_s
         options = DEFAULT_OPTIONS.merge(options)
         settings = ["hl=#{options[:language]}"]
         settings << 'border=1' if options[:border]
@@ -39,9 +38,9 @@ module Mimbles # :nodoc:
         config = settings.join('&')
         %Q(
         <object width="#{options[:width]}" height="#{options[:height]}">
-        <param name="movie" value="http://www.youtube.com/v/#{id}&#{config}"></param>
-        <param name="wmode" value="transparent"></param>
-        <embed src="http://www.youtube.com/v/#{id}&#{config}" type="application/x-shockwave-flash" wmode="transparent" width="#{options[:width]}" height="#{options[:height]}"></embed>
+            <param name="movie" value="http://www.youtube.com/v/#{video.id}&#{config}"></param>
+            <param name="wmode" value="transparent"></param>
+            <embed src="http://www.youtube.com/v/#{video.id}&#{config}" type="application/x-shockwave-flash" wmode="transparent" width="#{options[:width]}" height="#{options[:height]}"></embed>
         </object>
         )
       end
