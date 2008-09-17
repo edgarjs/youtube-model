@@ -58,20 +58,41 @@ suscription, contact or other entity. This class is parsed from the @<entry>@ ta
 tag in all YouTube data API requests. (To see more about the structure of the xml response go
 to the "YouTube API":http://code.google.com/apis/youtube/developers_guide_protocol.html#Understanding_Video_Entries
 
-The returned Entry instance has a main mehod: **video** (alias for **videos**), wich is an easy-to-remember alias for @entry@.
+The returned model instance has a main mehod: **videos**, wich is more than an alias for @entry@.
 
 **Example**
 
   <pre><code>
-  # controller:
-  @tube = YouTube.find('ruby on rails', :max_results => 5)
+  # --controller--
+  def index
+    @youtube = YouTube.find('ruby on rails', :max_results => 5)
+  end
   
-  # view:
-  <h1><%= @tube.title %></h1>
-  <% @tube.videos.each do |video| -%>
-    <%= youtube_embed video %>
-  <% end -%>
-  </code></pre>
+  def show
+    @video = YouTube.find_by_id(params[:id])
+  end
+  
+  # --views--
+  
+  # index.html.erb:
+  <p><%= image_tag @youtube.logo %></p>
+  <h1><%= @youtube.title %></h1>
+  <p><%= "Displaying #{@youtube.startIndex} - #{@youtube.itemsPerPage} of #{@youtube.totalResults}" %></p>
+  <p><%= link_to 'Upload', new_video_path %></p>
+  <%- for video in @youtube.videos -%>
+    <strong><%= video.title %></strong> <small>in <%= video.group.category %></small>
+    by <%= link_to video.author.name, "http://youtube.com/#{video.author.name}" %><br />
+    <%= simple_format truncate(video.content, :length => 100) %>
+    <%= link_to image_tag(video.group.thumbnail.first.url, :alt => video.title), video_path(video.id) %><br />
+    <small><%= link_to 'Watch on youtube', video.link.first.href %></small>
+    <p>&nbsp;</p>
+  <%- end -%>
+  
+  # show.html.erb
+  <h1><%= @video.title %></h1>
+  <em>by <%= link_to @video.author.name, "http://youtube.com/#{@video.author.name}" %></em>
+  <p><%= youtube_embed @video %></p>
+  <%= link_to 'Back', videos_path %>
 
 As you can see, the @youtube_embed@ method is used to display a video.
 
