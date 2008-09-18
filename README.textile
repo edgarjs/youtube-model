@@ -176,6 +176,10 @@ h2. Feedback
 
 I'll really appreciate your feedback, please contact me at edgar.js[at]gmail.com
 
+h3. Special Thanks
+
+I'd like to thank Tal Pink for the nice contribution to the plugin. It was the motivation for finish up this first version! :) Thank you very much.
+
 h2. License
 
 This code is released under Creative Commons Attribution-Share Alike 3.0 license.
