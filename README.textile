@@ -10,9 +10,17 @@ to solve this though.
 
 Just apply the patch to your frozen copy of rails:
 
-  curl http://rails.lighthouseapp.com/attachments/46005/accept_http_header.diff | git am
+  curl http://rails.lighthouseapp.com/attachments/46685/http_accept_header.diff | git am
 
 See details "here":http://groups.google.com/group/rubyonrails-core/browse_thread/thread/38a853b997202b3
+
+**Note about wikis and docs**
+
+Currently, the wikis are empty. So I'd appreciate if you want to contribute with wikis documentation; just drop me
+a line at edgar.js[at]gmail.com.
+
+But, it doesn't mean there isn't enough documentation. The full plugin is _rdoced_ so you just can @rake rdoc@ and
+check the details.
 
 *********************************************************************
 
@@ -28,15 +36,19 @@ Simply as:
 
   ./script/plugin install git://github.com/edgarjs/youtube-model.git
 
-h3. Generating the model
+h3. Generating the system
 
 The plugin includes a generator to create a model based on ActiveResource
 
   ./script/generate youtube_model <ModelName>
 
-This generator will create a file under the app/models directory. It is not an ActiveRecord model but an
-ActiveResource. (To see more about ActiveResource check out the
-"Rails API":http://api.rubyonrails.org/classes/ActiveResource.html
+This generator will create four files:
+* An ActiveResource based model under app/models directory.
+* A yaml configuration file under config directory.
+* An initializer that loads the configuration file, under config/initializers directory.
+
+And that's all, but be sure to check the configuration file to set up your Developer and Client Keys.
+You can get these keys at the "YouTube APIs and Tools":http://code.google.com/apis/youtube/dashboard/ page.
 
 h3. Listing videos
 
@@ -63,7 +75,7 @@ The returned model instance has a main mehod: **videos**, wich is more than an a
 **Example**
 
   <pre><code>
-  # --controller--
+  # VideosController
   def index
     @youtube = YouTube.find('ruby on rails', :max_results => 5)
   end
@@ -72,13 +84,11 @@ The returned model instance has a main mehod: **videos**, wich is more than an a
     @video = YouTube.find_by_id(params[:id])
   end
   
-  # --views--
-  
-  # index.html.erb:
+  # app/views/videos/index.html.erb
   <p><%= image_tag @youtube.logo %></p>
   <h1><%= @youtube.title %></h1>
   <p><%= "Displaying #{@youtube.startIndex} - #{@youtube.itemsPerPage} of #{@youtube.totalResults}" %></p>
-  <p><%= link_to 'Upload', new_video_path %></p>
+  <p><%= link_to 'Upload', youtube_auth_url(new_video_url) %></p>
   <%- for video in @youtube.videos -%>
     <strong><%= video.title %></strong> <small>in <%= video.group.category %></small>
     by <%= link_to video.author.name, "http://youtube.com/#{video.author.name}" %><br />
@@ -88,18 +98,86 @@ The returned model instance has a main mehod: **videos**, wich is more than an a
     <p>&nbsp;</p>
   <%- end -%>
   
-  # show.html.erb
+  # app/views/videos/show.html.erb
   <h1><%= @video.title %></h1>
   <em>by <%= link_to @video.author.name, "http://youtube.com/#{@video.author.name}" %></em>
   <p><%= youtube_embed @video %></p>
   <%= link_to 'Back', videos_path %>
+  </code></pre>
 
 As you can see, the @youtube_embed@ method is used to display a video.
 
 h3. Uploading videos
 
-TODO
+As seen in the @index@ example above, there is a helper named @youtube_auth_url@ wich generates an url to the
+YouTube authentication page. Pass another url as param to wich be redirected after authentication.
+This helper method takes the session and secure options from the configuration file. See the details of this options
+at the "YouTube API":http://code.google.com/apis/youtube/developers_guide_protocol.html#AuthSub_Authentication
+
+Upload process has two steps:
+# Meta-info for the video.
+# File choose.
+
+So basically we have two actions in our controller to upload a video. Here's a quick code example:
+
+  <pre><code>
+  # routes.rb
+  map.resources :videos, :new => {:upload => :post}
+  
+  # VideosController
+  def new
+    @categories ||= YouTube.categories_collection
+  end
+  
+  def upload
+    @upload_info = YouTube.get_upload_url(params[:video])
+  end
+  
+  # app/views/videos/new.html.erb
+  <% form_for 'video', :url => upload_new_video_path do |f| %>
+    <%= f.hidden_field :auth_sub, :value => params[:token] %>
+    <p><%= f.label :title %><br />
+    <%= f.text_field :title %></p>
+  
+    <p><%= f.label :description %><br />
+    <%= f.text_area :description, :rows => 10 %></p>
+  
+    <p><%= f.label :category %><br />
+    <%= f.select :category, @categories %></p>
+  
+    <p><%= f.label :keywords %><br />
+    <%= f.text_field :keywords %></p>
+  
+    <p><%= f.submit 'Continue to Step 2' %></p>
+  <% end %>
+  
+  # app/views/videos/upload.html.erb
+  <% form_tag @upload_info[:url], :multipart => true do %>
+    <%= hidden_field_tag :token, :value => @upload_info[:token] %>
+    <p><%= label_tag :file %><br />
+    <%= file_field_tag :file %></p>
+    <p><%= submit_tag 'Upload video' %></p>
+  <% end %>
+  </code></pre>
+
+Pay special attention to the routes file, I've added a new route called @:upload@ so I can use it
+in the first step to set the form post url by calling @upload_new_video_path@.
+Also don't forget to set @:multipart => true@ in the second step.
+
+Very easy isn't it? Yep, that is all.
+
+And for a more specific speech... the class method @get_upload_url@ receives a hash containing
+the meta-info of the first step, and returns a hash with the upload url and token.
+
+For extra information don't forget to read the "wikis":http://github.com/edgarjs/youtube-model/wikis
+or if you wanna go further just generate the rdoc for the plugin, it will be uber helpful.
 
 h2. Feedback
 
-I'll really appreciate your feedback, please contact me at edgar.js@gmail.com
+I'll really appreciate your feedback, please contact me at edgar.js[at]gmail.com
+
+h2. License
+
+This code is released under Creative Commons Attribution-Share Alike 3.0 license.
+
+!http://i.creativecommons.org/l/by-sa/3.0/88x31.png!:http://creativecommons.org/licenses/by-sa/3.0/

@@ -1,0 +1,6 @@
+developer_tag: your_developer_tag
+auth_sub:
+  secure: 0
+  session: 0
+  developer_key: YourAPIKeyGoesHere
+  client_key: And-Here-Goes-Your-Client-Key
