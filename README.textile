@@ -153,7 +153,7 @@ So basically we have two actions in our controller to upload a video. Here's a q
   
   # app/views/videos/upload.html.erb
   <% form_tag @upload_info[:url], :multipart => true do %>
-    <%= hidden_field_tag :token, :value => @upload_info[:token] %>
+    <%= hidden_field_tag :token, @upload_info[:token] %>
     <p><%= label_tag :file %><br />
     <%= file_field_tag :file %></p>
     <p><%= submit_tag 'Upload video' %></p>
