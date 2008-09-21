@@ -9,8 +9,8 @@ module YouTubeModel # :nodoc:
       self.site = "http://gdata.youtube.com/feeds/api"
       self.timeout = 5
         
-      extend Mimbles::YouTubeModel::SingletonMethods
-      include Mimbles::YouTubeModel::InstanceMethods
+      extend YouTubeModel::SingletonMethods
+      include YouTubeModel::InstanceMethods
     end
   end
     
