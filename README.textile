@@ -63,7 +63,7 @@ To get the videos uploaded by a user you can use the method @uploaded_by@ passin
 
   YouTube.uploaded_by('envyads')
 
-And so on. To see the full list of available methods see the "Wikis":http://github.com/edgarjs/youtube-model/wikis
+And so on. To see the full list of available methods see the "rdoc":http://rdoc.info/projects/edgarjs/youtube-model
 
 All methods will return an instance of @Entry@. The @Entry@ object encapsulates information about a video, playlist,
 suscription, contact or other entity. This class is parsed from the @<entry>@ tag of the xml response, wich is the root
@@ -75,7 +75,7 @@ The returned model instance has a main mehod: **videos**, wich is more than an a
 **Example**
 
   <pre><code>
-  # VideosController
+  #VideosController
   def index
     @youtube = YouTube.find('ruby on rails', :max_results => 5)
   end
@@ -84,24 +84,26 @@ The returned model instance has a main mehod: **videos**, wich is more than an a
     @video = YouTube.find_by_id(params[:id])
   end
   
-  # app/views/videos/index.html.erb
-  <p><%= image_tag @youtube.logo %></p>
-  <h1><%= @youtube.title %></h1>
-  <p><%= "Displaying #{@youtube.startIndex} - #{@youtube.itemsPerPage} of #{@youtube.totalResults}" %></p>
-  <p><%= link_to 'Upload', youtube_auth_url(new_video_url) %></p>
-  <%- for video in @youtube.videos -%>
-    <strong><%= video.title %></strong> <small>in <%= video.group.category %></small>
-    by <%= link_to video.author.name, "http://youtube.com/#{video.author.name}" %><br />
-    <%= simple_format truncate(video.content, :length => 100) %>
-    <%= link_to image_tag(video.group.thumbnail.first.url, :alt => video.title), video_path(video.id) %><br />
-    <small><%= link_to 'Watch on youtube', video.link.first.href %></small>
-    <p>&nbsp;</p>
-  <%- end -%>
+  #app/views/videos/index.html.erb
+  <%= image_tag @youtube.logo %>
   
-  # app/views/videos/show.html.erb
+  <h1><%= @youtube.title %></h1>
+  <%= "Displaying #{@youtube.startIndex} - #{@youtube.itemsPerPage} of #{@youtube.totalResults}" %>
+  
+  <%= link_to 'Upload', youtube_auth_url(new_video_url) %>
+  <% for video in @youtube.videos %>
+    <h3><%= video.title %></h3> in <%= video.group.category %>
+    by <%= link_to video.author.name, "http://youtube.com/#{video.author.name}" %>
+    
+    <%= simple_format truncate(video.content, :length => 100) %>
+    <%= link_to image_tag(video.group.thumbnail.first.url, :alt => video.title), video_path(video.id) %>
+    <%= link_to 'Watch on youtube', video.link.first.href %>
+  <% end %>
+  
+  #app/views/videos/show.html.erb
   <h1><%= @video.title %></h1>
-  <em>by <%= link_to @video.author.name, "http://youtube.com/#{@video.author.name}" %></em>
-  <p><%= youtube_embed @video %></p>
+  by <%= link_to @video.author.name, "http://youtube.com/#{@video.author.name}" %>
+  <%= youtube_embed @video %>
   <%= link_to 'Back', videos_path %>
   </code></pre>
 
@@ -121,10 +123,10 @@ Upload process has two steps:
 So basically we have two actions in our controller to upload a video. Here's a quick code example:
 
   <pre><code>
-  # routes.rb
+  #routes.rb
   map.resources :videos, :new => {:upload => :post}
   
-  # VideosController
+  #VideosController
   def new
     @categories ||= YouTube.categories_collection
   end
@@ -133,30 +135,33 @@ So basically we have two actions in our controller to upload a video. Here's a q
     @upload_info = YouTube.get_upload_url(params[:video])
   end
   
-  # app/views/videos/new.html.erb
+  #app/views/videos/new.html.erb
   <% form_for 'video', :url => upload_new_video_path do |f| %>
     <%= f.hidden_field :auth_sub, :value => params[:token] %>
-    <p><%= f.label :title %><br />
-    <%= f.text_field :title %></p>
+    
+    <%= f.label :title %>
+    <%= f.text_field :title %>
   
-    <p><%= f.label :description %><br />
-    <%= f.text_area :description, :rows => 10 %></p>
+    <%= f.label :description %>
+    <%= f.text_area :description, :rows => 10 %>
   
-    <p><%= f.label :category %><br />
-    <%= f.select :category, @categories %></p>
+    <%= f.label :category %>
+    <%= f.select :category, @categories %>
   
-    <p><%= f.label :keywords %><br />
-    <%= f.text_field :keywords %></p>
+    <%= f.label :keywords %>
+    <%= f.text_field :keywords %>
   
-    <p><%= f.submit 'Continue to Step 2' %></p>
+    <%= f.submit 'Continue to Step 2' %>
   <% end %>
   
-  # app/views/videos/upload.html.erb
+  #app/views/videos/upload.html.erb
   <% form_tag @upload_info[:url], :multipart => true do %>
     <%= hidden_field_tag :token, @upload_info[:token] %>
-    <p><%= label_tag :file %><br />
-    <%= file_field_tag :file %></p>
-    <p><%= submit_tag 'Upload video' %></p>
+    
+    <%= label_tag :file %>
+    <%= file_field_tag :file %>
+    
+    <%= submit_tag 'Upload video' %>
   <% end %>
   </code></pre>
 
