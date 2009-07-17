@@ -132,7 +132,7 @@ module YouTubeModel # :nodoc:
     # Find uploaded videos by a user.
     def uploaded_by(username)
       request("users/#{username}/uploads")
-    end
+    end    
   
     # Comments for a video.
     def comments_for(video)
@@ -147,6 +147,11 @@ module YouTubeModel # :nodoc:
     # Responses videos for a video.
     def responses_to(video)
       request(video.link[1].href)
+    end
+  
+    # Find uploaded videos by a user as default.
+    def uploaded_by_user(token)
+      get_request_with_user_as_default("users/default/uploads", token)
     end
   
     # Find a video through a search query. Options are:
@@ -181,7 +186,11 @@ module YouTubeModel # :nodoc:
     
     # Fetchs all YouTube categories
     def categories
-      connection.get('/schemas/2007/categories.cat')['category']
+      [["Film & Animation", "Film"], ["Autos & Vehicles", "Autos"], ["Music", "Music"], ["Pets & Animals", "Animals"], ["Sports", "Sports"],
+      ["Travel & Events", "Travel"], ["News & Politics", "News"], ["Howto & Style", "Howto"], ["Gaming", "Games"], ["Comedy", "Comedy"], 
+      ["People & Blogs", "People"], ["Entertainment", "Entertainment"], ["Education", "Education"], ["Nonprofits & Activism", "Nonprofit"], 
+      ["Science & Technology", "Tech"]]
+    #  connection.get('/schemas/2007/categories.cat')['category']
     end
     
     # Returns an array with only the +label+ and +term+ attributes of categories.
@@ -225,7 +234,25 @@ module YouTubeModel # :nodoc:
       
       upload
     end
-      
+    
+    def delete_video(video_id, token)
+      delete_request_with_authorised_user("users/default/uploads/#{video_id}", token)
+    end
+    
+    def update_video(video_id, token, video_params)
+      xml_entry = build_xml_entry(video_params)
+      put_request_with_authorised_user("users/default/uploads/#{video_id}", token, xml_entry)
+    end
+    
+    # Find status of video uploaded by a user.
+    def video_status(token, video_id)
+      get_request_with_user_as_default("users/default/uploads/#{video_id}", token)
+    end
+    
+    def videos_with_user_as_default(token)
+      get_request_with_user_as_default("users/default/uploads", token)
+    end
+    
     protected
       
     # Loads a response into a new Object of this class
@@ -234,6 +261,38 @@ module YouTubeModel # :nodoc:
       new.load(extend_attributes(connection.get(url, 'Accept' => '*/*')))
     end
     
+    def put_request_with_authorised_user(url, token, meta)
+      headers = {
+        'Content-Type' => "application/atom+xml",
+        'Content-Length' => meta.length.to_s,
+        'Authorization' => %Q(AuthSub token="#{token}"),
+        'X-GData-Client' => YT_CONFIG['auth_sub']['client_key'],
+        'X-GData-Key' => "key=#{YT_CONFIG['auth_sub']['developer_key']}"
+      }
+      url = "#{self.prefix}#{url}" unless url =~ /\Ahttp:/
+      connection.put(url, meta, headers) rescue nil
+    end
+    
+    def delete_request_with_authorised_user(url, token)
+      headers = {
+        'Accept' => 'application/atom+xml',
+        'Authorization' => %Q(AuthSub token="#{token}"),
+        'X-GData-Client' => YT_CONFIG['auth_sub']['client_key'],
+        'X-GData-Key' => "key=#{YT_CONFIG['auth_sub']['developer_key']}"
+      }
+      url = "#{self.prefix}#{url}" unless url =~ /\Ahttp:/
+      connection.delete(url, headers) rescue nil
+    end
+    
+    def get_request_with_user_as_default(url, token)
+      headers = {
+        'Accept' => '*/*',
+        'Authorization' => %Q(AuthSub token="#{token}")
+      }
+      url = "#{self.prefix}#{url}" unless url =~ /\Ahttp:/ 
+      new.load(extend_attributes(connection.get(url, headers)))  
+    end
+        
     private
   
     # Adds some extra keys to the +attributes+ hash
