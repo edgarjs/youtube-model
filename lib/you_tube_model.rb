@@ -184,13 +184,17 @@ module YouTubeModel # :nodoc:
       request("videos/#{id}")
     end
     
-    # Fetchs all YouTube categories
-    def categories
+    # Fetchs few YouTube categories
+    def video_categories
       [["Film & Animation", "Film"], ["Autos & Vehicles", "Autos"], ["Music", "Music"], ["Pets & Animals", "Animals"], ["Sports", "Sports"],
       ["Travel & Events", "Travel"], ["News & Politics", "News"], ["Howto & Style", "Howto"], ["Gaming", "Games"], ["Comedy", "Comedy"], 
       ["People & Blogs", "People"], ["Entertainment", "Entertainment"], ["Education", "Education"], ["Nonprofits & Activism", "Nonprofit"], 
       ["Science & Technology", "Tech"]]
-    #  connection.get('/schemas/2007/categories.cat')['category']
+    end
+    
+    # Fetchs all YouTube categories
+    def categories
+      connection.get('/schemas/2007/categories.cat')['category']
     end
     
     # Returns an array with only the +label+ and +term+ attributes of categories.
@@ -235,13 +239,14 @@ module YouTubeModel # :nodoc:
       upload
     end
     
+    
     def delete_video(video_id, token)
-      delete_request_with_authorised_user("users/default/uploads/#{video_id}", token)
+      delete_request_with_user_as_default("users/default/uploads/#{video_id}", token)
     end
     
     def update_video(video_id, token, video_params)
       xml_entry = build_xml_entry(video_params)
-      put_request_with_authorised_user("users/default/uploads/#{video_id}", token, xml_entry)
+      put_request_with_user_as_default("users/default/uploads/#{video_id}", token, xml_entry)
     end
     
     # Find status of video uploaded by a user.
@@ -261,7 +266,7 @@ module YouTubeModel # :nodoc:
       new.load(extend_attributes(connection.get(url, 'Accept' => '*/*')))
     end
     
-    def put_request_with_authorised_user(url, token, meta)
+    def put_request_with_user_as_default(url, token, meta)
       headers = {
         'Content-Type' => "application/atom+xml",
         'Content-Length' => meta.length.to_s,
@@ -273,7 +278,7 @@ module YouTubeModel # :nodoc:
       connection.put(url, meta, headers) rescue nil
     end
     
-    def delete_request_with_authorised_user(url, token)
+    def delete_request_with_user_as_default(url, token)
       headers = {
         'Accept' => 'application/atom+xml',
         'Authorization' => %Q(AuthSub token="#{token}"),
@@ -322,7 +327,7 @@ module YouTubeModel # :nodoc:
         'xmlns:yt' => 'http://gdata.youtube.com/schemas/2007' do
         xml.media :group do
           xml.tag! 'media:title', attrs[:title]
-          xml.media :description, attrs[:description], :type => 'plain'
+          xml.media :description, attrs[:content], :type => 'plain'
           xml.media :category, attrs[:category], :scheme => 'http://gdata.youtube.com/schemas/2007/categories.cat'
           xml.media :category, "ytm_#{YT_CONFIG['developer_tag']}", :scheme => 'http://gdata.youtube.com/schemas/2007/developertags.cat'
           xml.tag! 'media:keywords', attrs[:keywords]
