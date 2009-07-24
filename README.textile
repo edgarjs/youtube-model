@@ -37,68 +37,80 @@ h3. AuthSub for web applications
 
 	#app/views/videos/index.html.erb
 
-	Please Click <%= link_to 'here', youtube_auth_url(authorise_video_url) %> first to authorise access to your youtube account.<br/>
+	Please Click <%= link_to 'here', youtube_auth_url(authorise_videos_url) %> first to authorise access to your youtube account.<br/>
 
 	An authorise method will be added to make the single use token to a session token.
 
-	<pre><code>
-	#VideosController
-		
-		def authorise
-	   client = GData::Client::DocList.new
-	   if params[:token] 
-	     client.authsub_token = params[:token] # extract the single-use token from the URL query params 
-	     session[:token] = client.auth_handler.upgrade() 
-	     client.authsub_token = session[:token] if session[:token]      
-	   end
-	   redirect_to videos_path
-	  end
+  <pre><code>
+  #VideosController
+  def authorise
+    client = GData::Client::DocList.new
+    if params[:token] 
+      client.authsub_token = params[:token] # extract the single-use token from the URL query params
+      session[:token] = client.auth_handler.upgrade() 
+      client.authsub_token = session[:token] if session[:token]
+    end
+    redirect_to videos_path
+  end
 	</code></pre>
 	
-	Also add 'include GData' in the videos controller, which includes the module GData for authorisation process.
+	Also add 'include GData' in the videos controller, which includes the module GData for authorisation process. 
+	
+	<pre><code>
+  #config/environment.rb
+  config.gem "hpricot", :version => '0.6', :source => "http://code.whytheluckystiff.net"
+  config.gem 'gdata', :lib => 'gdata'
+  </code></pre>
 
 h3. Listing videos
 
 **Example**
   
-To get the videos uploaded by a user you can use the method @uploaded_by_user@ passing the session[:token] we saved during authorisation process
+To get all the videos uploaded by a user you can use the method @uploaded_by_user@ passing the session[:token] we saved during authorisation process
 
   YouTube.uploaded_by_user(session[:token])
-	
-	#VideosController
+
+  <pre><code>
+  #VideosController
   def index
-    @youtube =YouTube.uploaded_by_user(session[:token])
+    @youtube =YouTube.uploaded_by_user(session[:token]) if session[:token]
   end
- 
-	def show
-		@video = YouTube.find_by_id(params[:id]) rescue nil
-		flash[:message] = "Sorry the video is not found at Youtube" and redirect_to videos_path unless @video
-	end
+  
+  def show
+    @video = YouTube.find_by_id(params[:id]) rescue nil
+    flash[:message] = "Sorry the video is not found at Youtube" and redirect_to videos_path unless @video
+  end
 	
   #app/views/videos/index.html.erb
+
+  <% if session[:token] %>
   <%= image_tag @youtube.logo %>
-  
+
   <h1><%= @youtube.title %></h1>
   <%= "Displaying #{@youtube.startIndex} - #{@youtube.itemsPerPage} of #{@youtube.totalResults}" %>
 
   <% for video in @youtube.videos %>
     <h3><%= video.title %></h3> in <%= video.group.category %>
     by <%= link_to video.author.name, "http://youtube.com/#{video.author.name}" %>
-    
+
     <%= simple_format truncate(video.content, :length => 100) %>
     <%= link_to image_tag(video.group.thumbnail.first.url, :alt => video.title), video_path(video.id) %>
     <%= link_to 'Watch on youtube', video.link.first.href %>
+    <%= link_to 'Edit/Update', edit_video_path(video) %>
+	  <%= link_to 'Delete', video_path(video), :method => "delete" %>
   <% end %>
+  <% end %>
+
 
   #app/views/videos/show.html.erb
 
 	<h1><%= @video.title %></h1>
 	by <%= link_to @video.author.name, "http://youtube.com/#{@video.author.name}" %>
-	<%= youtube_embed @video %>
-	
-	<%= link_to 'Back', videos_path %><br/>
-	<%= link_to 'Edit/Update', edit_video_path(@video) %><br/>
-	<%= link_to 'Delete', video_path(@video), :method => "delete" %><br/>
+  <%= youtube_embed @video %>
+   
+  <%= link_to 'Back', videos_path %>
+  <%= link_to 'Edit/Update', edit_video_path(@video) %>
+  <%= link_to 'Delete', video_path(@video), :method => "delete" %>
   </code></pre>
 
 As you can see, the @youtube_embed@ method is used to display a video.
@@ -118,7 +130,7 @@ So basically we have two actions in our controller to upload a video. Here's a q
 
   <pre><code>
   #routes.rb
-  map.resources :videos, :new => {:upload => :post}, :member => {:authorise => :get }
+  map.resources :videos, :new => {:upload => :post}, :collection => {:authorise => :get }
   
   #VideosController
   def new
@@ -128,7 +140,14 @@ So basically we have two actions in our controller to upload a video. Here's a q
   def upload
     @upload_info = YouTube.get_upload_url(params[:video])
   end
+  </code></pre>
   
+Also add a link to upload the video at the index page.
+
+  <pre><code>
+  #app/views/videos/index.html.erb
+  <%= link_to "Upload Video", new_video_url %><br/>
+
   #app/views/videos/new.html.erb
   <% form_for 'video', :url => upload_new_video_path do |f| %>
   <%= f.hidden_field :auth_sub, :value => session[:token] %>
@@ -148,6 +167,7 @@ So basically we have two actions in our controller to upload a video. Here's a q
     <%= f.submit 'Continue to Step 2' %>
   <% end %>
 
+
   #app/views/videos/upload.html.erb
   <% form_tag @upload_info[:url], :multipart => true do %>
   <%= hidden_field_tag :token, @upload_info[:token] %>
@@ -165,51 +185,50 @@ To get the videos updated by a user you can use the method @update_video@ passin
 
 	 YouTube.update_video(params[:id], session[:token], params[:you_tube_entry])
 	
-	<pre><code>
-	#VideosController
-	before_filter :find_video, :only => [:edit, :update]
-	def edit
-	  @youtube_videos =YouTube.uploaded_by_user(session[:token])
-	  @video = @youtube_videos.videos.select { |video| video.id == params[:id] }  
-	  @youtube = @video.first
-	  @youtube.keywords = @youtube.group.keywords
-	  @youtube.category = @youtube.group.category
-	  @categories ||= YouTube.video_categories
-	end
-
+  <pre><code>
+  #VideosController
+  before_filter :find_video, :only => [:edit, :update]
+  def edit
+    @youtube_videos =YouTube.uploaded_by_user(session[:token])
+    @video = @youtube_videos.videos.select { |video| video.id == params[:id] }  
+    @youtube = @video.first
+    @youtube.keywords = @youtube.group.keywords
+    @youtube.category = @youtube.group.category
+    @categories ||= YouTube.video_categories
+  end
+	
 	def update
-	  if YouTube.update_video(params[:id], session[:token], params[:you_tube_entry]) rescue nil
-	   flash[:message] = "Video has been Updated Successfully."
-	  else
-	   flash[:message] = "Video has not been Updated Successfully."
-	  end      
-	  redirect_to videos_path
-	end
-		
-	private
-	def find_video
-	 flash[:message] = "Sorry the video is not found at Youtube" and redirect_to videos_path unless @video = YouTube.find_by_id(params[:id]) rescue nil
-	end
-	</code></pre>
-			
-	#app/views/videos/edit.html.erb
-	<% form_for @youtube, :url => video_url, :html => { :multipart => true }  do |f| %>
-	  <%= f.label :title %>
-	  <%= f.text_field :title %>
-
-	  <%= f.label :description %>
-	  <%= f.text_area :content, :rows => 10 %>
-
-	  <%= f.label :category %>
-	  <%= f.select :category, @categories %>
-
-	  <%= f.label :keywords %>
+    if u = YouTube.update_video(params[:id], session[:token], params[:you_tube_entry]) rescue nil
+      flash[:message] = "Video has been Updated Successfully."
+    else
+      flash[:message] = "Video has not been Updated Successfully."
+    end 
+    redirect_to videos_path
+  end
+	
+  private
+  def find_video
+    flash[:message] = "Sorry the video is not found at Youtube" and redirect_to videos_path unless @video = YouTube.find_by_id(params[:id]) rescue nil
+  end
+	
+  #app/views/videos/edit.html.erb
+  <% form_for @youtube, :url => video_url, :html => { :multipart => true }  do |f| %>
+    <%= f.label :title %>
+    <%= f.text_field :title %>
+    
+    <%= f.label :description %>
+    <%= f.text_area :content, :rows => 10 %>
+    
+    <%= f.label :category %>
+    <%= f.select :category, @categories %>
+    
+    <%= f.label :keywords %>
 	  <%= f.text_field :keywords %>
-
- 		<%= f.submit 'Update video' %>
-	<% end %>
-	<%= link_to 'Back', videos_path %>
-	</code></pre>
+    
+    <%= f.submit 'Update video' %>
+  <% end %>
+  <%= link_to 'Back', videos_path %>
+  </code></pre>
 	
 h3. Deleting Videos
 
@@ -217,17 +236,21 @@ To delete the videos of any user you can use the method @delete_video@ passing t
 
   YouTube.delete_video(params[:id], session[:token])
 
-	<pre><code>
-	#VideosController
-	before_filter :find_video, :only => [:show, :edit, :update, :destroy]	
-	def destroy  
-	 yt = YouTube.delete_video(params[:id], session[:token]) rescue nil
-	 flash[:message] = "Video has been sucessfully deleted." if yt.msg == "OK"
-	 redirect_to videos_path
-	end
-	</code></pre>
+  <pre><code>
+  #VideosController
+  before_filter :find_video, :only => [:show, :edit, :update, :destroy]	
+  def destroy  
+    yt = YouTube.delete_video(params[:id], session[:token]) rescue nil
+    if yt.msg == "OK"
+      flash[:message] = "Video has been sucessfully deleted." 
+    else
+      flash[:message] = "Sorry the video has not been deleted."
+    end 
+    redirect_to videos_path
+  end
+  </code></pre>
 
-	The filter is applied on show method so that can be removed.
+	The filter is applied on show method so that method can now be removed.
 
 Also don't forget to set @:multipart => true@ in the second step.
 
