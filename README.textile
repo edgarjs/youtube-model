@@ -19,7 +19,7 @@ h3. Generating the system
 
 The plugin includes a generator to create a model based on ActiveResource
 
-  ./script/generate youtube_model <ModelName>
+  ./script/generate youtube_model ModelName
 
 This generator will create four files:
 * An ActiveResource based model under app/models directory.
@@ -35,9 +35,10 @@ h3. AuthSub for web applications
 	
 	The token obtained after doing authorisation process will become a session token. So we will set the session parameter to 1 in yaml	configuration file. This token is used to upload, edit and delete video.
 
-	#app/views/videos/index.html.erb
-
-	Please Click <%= link_to 'here', youtube_auth_url(authorise_videos_url) %> first to authorise access to your youtube account.<br/>
+  <pre><code>
+  #app/views/videos/index.html.erb
+	Please Click <%= link_to 'here', youtube_auth_url(authorise_videos_url) %> first to authorise access to your youtube account.
+	</code></pre>
 
 	An authorise method will be added to make the single use token to a session token.
 
@@ -68,7 +69,7 @@ h3. Listing videos
   
 To get all the videos uploaded by a user you can use the method @uploaded_by_user@ passing the session[:token] we saved during authorisation process
 
-  YouTube.uploaded_by_user(session[:token])
+  @YouTube.uploaded_by_user(session[:token])@
 
   <pre><code>
   #VideosController
@@ -82,7 +83,6 @@ To get all the videos uploaded by a user you can use the method @uploaded_by_use
   end
 	
   #app/views/videos/index.html.erb
-
   <% if session[:token] %>
   <%= image_tag @youtube.logo %>
 
@@ -101,9 +101,7 @@ To get all the videos uploaded by a user you can use the method @uploaded_by_use
   <% end %>
   <% end %>
 
-
   #app/views/videos/show.html.erb
-
 	<h1><%= @video.title %></h1>
 	by <%= link_to @video.author.name, "http://youtube.com/#{@video.author.name}" %>
   <%= youtube_embed @video %>
@@ -183,7 +181,7 @@ h3. Updating Videos
 	
 To get the videos updated by a user you can use the method @update_video@ passing the id of that video, session[:token] and params hash
 
-	 YouTube.update_video(params[:id], session[:token], params[:you_tube_entry])
+	 @YouTube.update_video(params[:id], session[:token], params[:you_tube_entry])@
 	
   <pre><code>
   #VideosController
@@ -234,7 +232,7 @@ h3. Deleting Videos
 
 To delete the videos of any user you can use the method @delete_video@ passing the id of that video and session[:token]
 
-  YouTube.delete_video(params[:id], session[:token])
+  @YouTube.delete_video(params[:id], session[:token])@
 
   <pre><code>
   #VideosController
