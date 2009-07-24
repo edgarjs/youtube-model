@@ -1,5 +1,3 @@
-require 'hpricot'
-
 module YouTubeModel # :nodoc:
   def self.included(base)
     base.extend ClassMethods
@@ -36,17 +34,6 @@ module YouTubeModel # :nodoc:
     def top_rated(time = :all_time)
       request("standardfeeds/top_rated#{query_string(:time => time)}")
     end
-    
-		def auth_token(user, pass, client_id = 'youtube_g')
-			require "net/https"
-			http = Net::HTTP.new("www.google.com", 443)
-			http.use_ssl = true
-			body = "Email=#{CGI::escape user}&Passwd=#{CGI::escape pass}&service=youtube&source=#{CGI::escape client_id}"
-			response = http.post("/youtube/accounts/ClientLogin", body, "Content-Type" => "application/x-www-form-urlencoded")
-			raise Exception, response.body[/Error=(.+)/,1] if response.code.to_i != 200
-			auth_token = response.body[/Auth=(.+)/, 1]
-			auth_token
-		end
       
     # Retrieve the top favorited videos for a time. Valid times are:
     # * :today (1 day)
@@ -221,7 +208,7 @@ module YouTubeModel # :nodoc:
     def get_upload_url(meta)
       xml_entry = build_xml_entry(meta)
       headers = {
-        'Authorization' => %Q(GoogleLogin auth="#{meta[:auth_sub]}"),
+        'Authorization' => %Q(AuthSub token="#{meta[:auth_sub]}"),
         'X-GData-Client' => YT_CONFIG['auth_sub']['client_key'],
         'X-GData-Key' => "key=#{YT_CONFIG['auth_sub']['developer_key']}",
         'Content-Length' => xml_entry.length.to_s,
@@ -237,17 +224,6 @@ module YouTubeModel # :nodoc:
       upload[:code] = response.code
       
       upload
-    end
-    
-    def destroy(meta)
-      headers = {
-        'Content-Type' => "application/atom+xml",
-        'Authorization' => %Q(GoogleLogin token="#{meta[:auth_sub]}"),
-        'X-GData-Client' => YT_CONFIG['auth_sub']['client_key'],
-        'X-GData-Key' => "key=#{YT_CONFIG['auth_sub']['developer_key']}",
-      }
-      require 'rest_client'
-      RestClient.delete("http://gdata.youtube.com/feeds/api/users/#{meta[:user_id]}/uploads/#{meta[:video_id]}", headers)
     end
       
     protected
