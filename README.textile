@@ -40,7 +40,7 @@ h3. Generating the system
 
 The plugin includes a generator to create a model based on ActiveResource
 
-  ./script/generate youtube_model ModelName
+  ./script/generate youtube_model <ModelName>
 
 This generator will create four files:
 * An ActiveResource based model under app/models directory.
@@ -111,8 +111,8 @@ As you can see, the @youtube_embed@ method is used to display a video.
 
 h3. Uploading videos
 
-As seen in the @index@ example above, there is a helper named @youtube_auth_url@ which generates a url to the
-YouTube authentication page. Pass another url as param to be redirected to after authentication.
+As seen in the @index@ example above, there is a helper named @youtube_auth_url@ wich generates an url to the
+YouTube authentication page. Pass another url as param to wich be redirected after authentication.
 This helper method takes the session and secure options from the configuration file. See the details of this options
 at the "YouTube API":http://code.google.com/apis/youtube/developers_guide_protocol.html#AuthSub_Authentication
 
