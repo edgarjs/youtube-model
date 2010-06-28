@@ -181,7 +181,7 @@ module YouTubeModel # :nodoc:
     # Here the id is: *JMDcOViViNY* NOTE: this method returns the video itself,
     # no need to call @yt.video
     def find_by_id(id)
-      request("videos/#{id}")
+      request("videos/?q=#{id}")
     end
     
     # Fetchs few YouTube categories
