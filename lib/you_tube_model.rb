@@ -1,159 +1,199 @@
 module YouTubeModel # :nodoc:
-  def self.included(base)
-    base.extend ClassMethods
+
+
+  # Call this method to make an ActiveResource model ready to roll with YouTube
+  def acts_as_youtube_model
+    self.site = "http://gdata.youtube.com/feeds/api"
+    self.timeout = 5
+
+    extend SingletonMethods
+    include InstanceMethods
   end
-    
+
   module ClassMethods
-    # Call this method to make an ActiveResource model ready to roll with YouTube
-    def acts_as_youtube_model
-      self.site = "http://gdata.youtube.com/feeds/api"
-      self.timeout = 5
-        
-      extend YouTubeModel::SingletonMethods
-      include YouTubeModel::InstanceMethods
-    end
-  end
-    
-  module InstanceMethods
-    # Returns an array of +entry+, or an empty array when there's no such +entry+
-    def videos
-      if respond_to?(:entry)
-        entry.is_a?(Array) ? entry : [entry]
-      else
-        []
+    # create a standard method
+    def create_method(name, collection = :collection, &url)
+      define_method name do |*args|
+        instanciate collection do
+          request(url.call(*args))
+        end
       end
     end
   end
-    
+
+  class Collection < Array
+    attr_accessor :start_index, :items_per_page, :total_results
+
+    def initialize(klass, &block)
+      response = block.call
+      self.start_index = response['startIndex'].to_i
+      self.items_per_page = response['itemsPerPage'].to_i
+      self.total_results = response['totalResults'].to_i
+      super([response['entry']].flatten.map{|video| klass.new.load(video)})
+    end
+  end
+
+  module InstanceMethods
+    # Comments for a video.
+
+    def request(*options)
+      self.class.request(*options)
+    end
+
+    def comments(force=false)
+      if @attributes['comments'].nil? or force == true
+        load({ :comments => request(comments_attr.feedLink.href)['entry'] })
+      else
+        @attributes['comments']
+      end
+    end
+
+    def related_instances
+      self.class.related_to(self)
+    end
+
+    # Responses videos for a video.
+    def responses_to
+      self.class.request(link[1].href)
+    end
+
+  end
+
   module SingletonMethods
+    extend ClassMethods
+
+    def instanciate(type='collection', &block)
+      col = Collection.new self do
+        block.call
+      end
+      type.to_s == 'collection' ? col : col.first
+    end
+
+
     # Retrieve the top rated videos for a time. Valid times are:
     # * :today (1 day)
     # * :this_week (7 days)
     # * :this_month (1 month)
     # * :all_time (default)
-    def top_rated(time = :all_time)
-      request("standardfeeds/top_rated#{query_string(:time => time)}")
+    create_method "top_rated", :collection do |*time|
+      "standardfeeds/top_rated#{query_string(:time => time.first || :all_time)}"
     end
-      
-    # Retrieve the top favorited videos for a time. Valid times are:
-    # * :today (1 day)
-    # * :this_week (7 days)
-    # * :this_month (1 month)
-    # * :all_time (default)
-    def top_favorites(time = :all_time)
-      request("standardfeeds/top_favorites#{query_string(:time => time)}")
+
+    create_method "uploaded_by_user", :collection do |token|
+      {
+          :url => "users/default/uploads",
+          :headers => {'Authorization' => %Q(AuthSub token="#{token}")}
+      }
     end
-      
+
     # Retrieve the most viewed videos for a time. Valid times are:
     # * :today (1 day)
     # * :this_week (7 days)
     # * :this_month (1 month)
     # * :all_time (default)
-    def most_viewed(time = :all_time)
-      request("standardfeeds/most_viewed#{query_string(:time => time)}")
+    create_method :top_favorites, :collection do |*time|
+      "standardfeeds/top_favorites#{query_string(:time => time.first || :all_time )}"
     end
-      
-    # Retrieve the most recent videos for a time. Valid times are:
+
+    # Retrieve the most viewed videos for a time. Valid times are:
     # * :today (1 day)
     # * :this_week (7 days)
     # * :this_month (1 month)
     # * :all_time (default)
-    def most_recent(time = :all_time)
-      request("standardfeeds/most_recent#{query_string(:time => time)}")
+    create_method :most_viewed, :collection do |*time|
+      "standardfeeds/most_viewed#{query_string(:time => time.first || :all_time )}"
     end
-      
-    # Retrieve the most discussed videos for a time. Valid times are:
+
+    # Retrieve the most viewed videos for a time. Valid times are:
     # * :today (1 day)
     # * :this_week (7 days)
     # * :this_month (1 month)
     # * :all_time (default)
-    def most_discussed(time = :all_time)
-      request("standardfeeds/most_discussed#{query_string(:time => time)}")
+    create_method :most_recent, :collection do |*time|
+      "standardfeeds/most_recent#{query_string(:time => time.first || :all_time )}"
     end
-      
-    # Retrieve the most linked videos for a time. Valid times are:
+
+    # Retrieve the most viewed videos for a time. Valid times are:
     # * :today (1 day)
     # * :this_week (7 days)
     # * :this_month (1 month)
     # * :all_time (default)
-    def most_linked(time = :all_time)
-      request("standardfeeds/most_linked#{query_string(:time => time)}")
+    create_method :most_discussed, :collection do |*time|
+      "standardfeeds/most_discussed#{query_string(:time => time.first || :all_time )}"
     end
-      
-    # Retrieve the most responded videos for a time. Valid times are:
+
+    # Retrieve the most viewed videos for a time. Valid times are:
     # * :today (1 day)
     # * :this_week (7 days)
     # * :this_month (1 month)
     # * :all_time (default)
-    def most_responded(time = :all_time)
-      request("standardfeeds/most_responded#{query_string(:time => time)}")
+    create_method :most_linked, :collection do |*time|
+      "standardfeeds/most_linked#{query_string(:time => time.first || :all_time )}"
+    end
+
+    # Retrieve the most viewed videos for a time. Valid times are:
+    # * :today (1 day)
+    # * :this_week (7 days)
+    # * :this_month (1 month)
+    # * :all_time (default)
+    create_method :most_responded, :collection do |*time|
+      "standardfeeds/most_responded#{query_string(:time => time.first || :all_time )}"
     end
       
     # Retrieve the recently featured videos.
-    def recently_featured
-      request("standardfeeds/recently_featured")
+    create_method :recently_featured, :collection do
+      "standardfeeds/recently_featured"
     end
-      
+
+
     # Retrieve the videos watchables on mobile.
-    def watch_on_mobile
-      request("standardfeeds/watch_on_mobile")
+    create_method :watch_on_mobile, :collection do
+      "standardfeeds/watch_on_mobile"
     end
-      
+
     # Finds videos by categories or keywords.
     # 
     # Capitalize words if you refer to a category.
     # 
     # You can use the operators +NOT+(-) and +OR+(|). For example:
     #   find_by_category_and_tag('cats|dogs', '-rats', 'Comedy')
-    def find_by_category_and_tag(*tags_and_cats)
-      request("videos/-/#{tags_and_cats.map{ |t| CGI::escape(t) }.join('/')}")
+    create_method :find_by_category_and_tag, :collection do |*tags_and_cats|
+      "videos/-/#{tags_and_cats.map{ |t| CGI::escape(t) }.join('/')}"
     end
-      
+
     # Finds videos by tags (keywords).
     # 
     # You can use the operators +NOT+(-) and +OR+(|). For example:
     #   find_by_tag('cats|dogs', '-rats')
-    def find_by_tag(*tags)
+    create_method :find_by_tag, :collection do |*tags|
       url = "videos/-/%7Bhttp%3A%2F%2Fgdata.youtube.com%2Fschemas%2F2007%2Fkeywords.cat%7D"
       keywords = tags.map{ |t| CGI::escape(t) }.join('/')
-      request("#{url}#{keywords}")
+      "#{url}#{keywords}"
     end
-      
+
     # Finds videos by tags (keywords).
     # 
     # You can use the operators +NOT+(-) and +OR+(|). For example:
     #   find_by_tag('cats|dogs', '-rats')
-    def find_by_category(*categories)
+    create_method :find_by_category, :collection do |*categories|
       url = "videos/-/%7Bhttp%3A%2F%2Fgdata.youtube.com%2Fschemas%2F2007%2Fcategories.cat%7D"
       keywords = categories.map{ |c| CGI::escape(c) }.join('/')
-      request("#{url}#{keywords}")
+      "#{url}#{keywords}"
     end
-  
+
     # Find uploaded videos by a user.
-    def uploaded_by(username)
-      request("users/#{username}/uploads")
-    end    
-  
-    # Comments for a video.
-    def comments_for(video)
-      request(video.comments.feedLink.href)
+    create_method :uploaded_by, :collection do |username|
+      "users/#{username}/uploads"
     end
-  
+
     # Related videos for a video.
-    def related_to(video)
-      request(video.link[2].href)
+    create_method :related_to, :collection do |inst|
+      inst.link[2].href
     end
+
+
   
-    # Responses videos for a video.
-    def responses_to(video)
-      request(video.link[1].href)
-    end
-  
-    # Find uploaded videos by a user as default.
-    def uploaded_by_user(token)
-      get_request_with_user_as_default("users/default/uploads", token)
-    end
-  
+
     # Find a video through a search query. Options are:
     # * :orderby (:relevance, :published, :viewCount, :rating)
     # * :start_index
@@ -166,22 +206,33 @@ module YouTubeModel # :nodoc:
     # See options details at {YouTube API}[http://code.google.com/apis/youtube/developers_guide_protocol.html#Searching_for_Videos]
     # 
     # Note: +alt+ option is still in researching because it causes some errors.
-    def find(query, options = {})
-      options[:vq] = query
+    create_method :find, :collection do |*args|
+      options = (args.size == 2) ? args.last : {}
+      options[:vq] = args.first
       options[:orderby] ||= :relevance
       options.delete(:alt)
       params = Hash[*options.stringify_keys.collect{ |k, v|
           [k.dasherize, v] }.flatten
       ]
-      request("videos#{query_string(params)}")
+      "videos#{query_string(params)}"
     end
+
+#    def find(query, options = {})
+#      options[:vq] = query
+#      options[:orderby] ||= :relevance
+#      options.delete(:alt)
+#      params = Hash[*options.stringify_keys.collect{ |k, v|
+#          [k.dasherize, v] }.flatten
+#      ]
+#      request("videos#{query_string(params)}")
+#    end
 
     # Search for a specific video by its ID.
     #   http://www.youtube.com/watch?v=JMDcOViViNY
     # Here the id is: *JMDcOViViNY* NOTE: this method returns the video itself,
     # no need to call @yt.video
-    def find_by_id(id)
-      request("videos/?q=#{id}")
+    create_method :find_by_id, :singular do |id|
+      "videos/?q=#{id}"
     end
     
     # Fetchs few YouTube categories
@@ -257,13 +308,13 @@ module YouTubeModel # :nodoc:
     def videos_with_user_as_default(token)
       get_request_with_user_as_default("users/default/uploads", token)
     end
-    
-    protected
-      
+
     # Loads a response into a new Object of this class
-    def request(url)
-      url = "#{self.prefix}#{url}" unless url =~ /\Ahttp:/
-      new.load(extend_attributes(connection.get(url, 'Accept' => '*/*')))
+    def request(options)
+      options = { :url => options } if options.is_a?(String)
+      options[:url] = "#{self.prefix}#{options[:url]}" unless options[:url] =~ /\Ahttp:/
+      options[:headers] = {'Accept' => '*/*'}.update(options[:headers] || {})
+      extend_attributes(connection.get(options[:url], options[:headers]))
     end
     
     def put_request_with_user_as_default(url, token, meta)
@@ -294,8 +345,8 @@ module YouTubeModel # :nodoc:
         'Accept' => '*/*',
         'Authorization' => %Q(AuthSub token="#{token}")
       }
-      url = "#{self.prefix}#{url}" unless url =~ /\Ahttp:/ 
-      new.load(extend_attributes(connection.get(url, headers)))  
+      url = "#{self.prefix}#{url}" unless url =~ /\Ahttp:/
+      request(:url => url, :headers =>headers)
     end
         
     private
@@ -310,11 +361,12 @@ module YouTubeModel # :nodoc:
       yt
     end
     
-    # Renames the +id+ key to +api_id+ and leaves the simple video id on the
-    # +id+ key
+    # Renames the +id+ key to +api_id+ and leaves the simple video id on the +id+ key
+    # Plus rename comments to comments_attr in order to avoid conflicts whith the instance method
     def scan_id(attrs)
       attrs['api_id'] = attrs['id']
       attrs['id'] = attrs['api_id'].scan(/[\w-]+$/).to_s
+      attrs['comments_attr'] = attrs.delete('comments') if attrs['comments']
       attrs
     end
     
