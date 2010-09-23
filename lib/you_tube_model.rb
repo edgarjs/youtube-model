@@ -11,7 +11,7 @@ module YouTubeModel # :nodoc:
   end
 
   module ClassMethods
-    # create a standard method
+    # create a standard request api class method which instanciate some video resource
     def create_method(name, collection = :collection, &url)
       define_method name do |*args|
         instanciate collection do
@@ -62,9 +62,10 @@ module YouTubeModel # :nodoc:
   module SingletonMethods
     extend ClassMethods
 
+    #Instanciate video by
     def instanciate(type='collection', &block)
       col = Collection.new self do
-        block.call
+        extend_attributes(block.call)
       end
       type.to_s == 'collection' ? col : col.first
     end
@@ -80,10 +81,7 @@ module YouTubeModel # :nodoc:
     end
 
     create_method "uploaded_by_user", :collection do |token|
-      {
-          :url => "users/default/uploads",
-          :headers => {'Authorization' => %Q(AuthSub token="#{token}")}
-      }
+      { :url => "users/default/uploads", :headers => { :auth => token } }
     end
 
     # Retrieve the most viewed videos for a time. Valid times are:
@@ -255,107 +253,115 @@ module YouTubeModel # :nodoc:
       }
     end
     
-    # Sends a POST to YouTube to get the upload url and token.
-    # 
-    # Receives a hash with the following keys:
-    # * <tt>:title</tt> Title of the video.
-    # * <tt>:description</tt> Description of the video.
-    # * <tt>:category</tt> Category of the video.
-    # * <tt>:keywords</tt> Keywords for the video.
-    # * <tt>:auth_sub</tt> Authentication token.
-    # * <tt>:nexturl</tt> Url to redirect after the video has been uploaded. Leave it nil to go to http://www.youtube.com/my_videos
-    # 
-    # Returns a hash with the keys:
-    # * <tt>:url</tt> url for upload the video to.
-    # * <tt>:token</tt> token hash necessary to upload.
-    # * <tt>:code</tt> response code of the POST.
-    def get_upload_url(meta)
+
+
+    def upload_video(meta)
       xml_entry = build_xml_entry(meta)
-      headers = {
-        'Authorization' => %Q(AuthSub token="#{meta[:auth_sub]}"),
-        'X-GData-Client' => YT_CONFIG['auth_sub']['client_key'],
-        'X-GData-Key' => "key=#{YT_CONFIG['auth_sub']['developer_key']}",
-        'Content-Length' => xml_entry.length.to_s,
-        'Content-Type' => "application/atom+xml; charset=UTF-8"
-      }
-      response = connection.post('/action/GetUploadToken', xml_entry, headers)
-      meta[:nexturl] ||= 'http://www.youtube.com/my_videos'
+      data = %{--bbe873dc\r
+Content-Type: application/atom+xml; charset=UTF-8
+
+#{xml_entry}\r
+--bbe873dc\r
+Content-Type: #{meta[:file].content_type}
+Content-Transfer-Encoding: binary
+
+#{meta[:file].read}\r
+--bbe873dc--\r\n}
+
+      response = request(:method => :post,
+        :url => "http://uploads.gdata.youtube.com/feeds/api/users/default/uploads",
+        :data => data,
+        :headers => {
+          :auth => meta[:auth_sub],
+          :length => data.length,
+          'GData-Version' => "2",
+          'Slug' => meta[:file].original_filename,
+          'Host' => 'uploads.gdata.youtube.com',
+          'Connection' => 'close',
+          'Content-Type' => 'multipart/related; boundary="bbe873dc"'
+        })
+      debugger
+
+
       upload = {}
       (Hpricot.XML(response.body)/:response).each do |elm|
         upload[:url] = "#{(elm/:url).text}?#{{:nexturl => meta[:nexturl]}.to_query}"
         upload[:token] = (elm/:token).text
       end if response.code == "200"
       upload[:code] = response.code
-      
+
       upload
+
     end
     
-    
     def delete_video(video_id, token)
-      delete_request_with_user_as_default("users/default/uploads/#{video_id}", token)
+      request :method => :delete, :url => "users/default/uploads/#{video_id}", :headers => { :accept => :xml, :auth => token }
     end
     
     def update_video(video_id, token, video_params)
       xml_entry = build_xml_entry(video_params)
-      put_request_with_user_as_default("users/default/uploads/#{video_id}", token, xml_entry)
+      request :method => :put,
+              :url => "users/default/uploads/#{video_id}",
+              :data => xml_entry,
+              :headers => {:accept => :xml, :auth => token, :length => xml_entry.length }
     end
     
     # Find status of video uploaded by a user.
     def video_status(token, video_id)
-      get_request_with_user_as_default("users/default/uploads/#{video_id}", token)
+      request :url => "users/default/uploads/#{video_id}", :headers => {:auth => token}
     end
     
     def videos_with_user_as_default(token)
-      get_request_with_user_as_default("users/default/uploads", token)
+      request :url => "users/default/uploads", :headers => {:auth => token}
     end
 
-    # Loads a response into a new Object of this class
+    # Request Google API
+    # Receive a simple url String as argument for get request without authentication
+    # Receive an option Hash width the keys :
+    #   - :method (optional default get),
+    #   - :url    (required),
+    #   - :header (optional default {'Accept' => '*/*'},
+    #   - :data   (optional)
+
     def request(options)
       options = { :url => options } if options.is_a?(String)
-      options[:url] = "#{self.prefix}#{options[:url]}" unless options[:url] =~ /\Ahttp:/
-      options[:headers] = {'Accept' => '*/*'}.update(options[:headers] || {})
-      extend_attributes(connection.get(options[:url], options[:headers]))
+      options[:method] ||= :get
+      options[:url] = options[:url] =~ /\Ahttp:/ ? options[:url] : "#{self.prefix}#{options[:url]}"
+      options[:headers] = request_headers(options[:headers])
+      if [:post,:put].include? options[:method]
+        connection.send(options[:method], options[:url], options[:data].to_s, options[:headers])
+      else
+        connection.send(options[:method], options[:url], options[:headers])
+      end
     end
-    
-    def put_request_with_user_as_default(url, token, meta)
-      headers = {
-        'Content-Type' => "application/atom+xml",
-        'Content-Length' => meta.length.to_s,
-        'Authorization' => %Q(AuthSub token="#{token}"),
-        'X-GData-Client' => YT_CONFIG['auth_sub']['client_key'],
-        'X-GData-Key' => "key=#{YT_CONFIG['auth_sub']['developer_key']}"
-      }
-      url = "#{self.prefix}#{url}" unless url =~ /\Ahttp:/
-      connection.put(url, meta, headers) rescue nil
+
+    # Build the expected API request headers
+    # Receive as parameter a hash of short-key for common header, plus somme custom other pair
+    #   - :auth => token,
+    #   - :length => content_size,
+    #   - :accept => [:all, :xml]
+    def request_headers(params={})
+      h = {'Accept' => '*/*'}
+      if accept = params.delete(:accept) and accept.to_s == 'xml'
+        h.update('Accept' => 'application/atom+xml')
+      end
+      if length = params.delete(:length)
+        h.update('Content-Length' => length.to_s)
+      end
+      if token = params.delete(:auth)
+        h.update('Authorization' => %Q(AuthSub token="#{token}"), 'X-GData-Key' => "key=#{YT_CONFIG['auth_sub']['developer_key']}")
+      end
+      h.update(params)
     end
-    
-    def delete_request_with_user_as_default(url, token)
-      headers = {
-        'Accept' => 'application/atom+xml',
-        'Authorization' => %Q(AuthSub token="#{token}"),
-        'X-GData-Client' => YT_CONFIG['auth_sub']['client_key'],
-        'X-GData-Key' => "key=#{YT_CONFIG['auth_sub']['developer_key']}"
-      }
-      url = "#{self.prefix}#{url}" unless url =~ /\Ahttp:/
-      connection.delete(url, headers) rescue nil
-    end
-    
-    def get_request_with_user_as_default(url, token)
-      headers = {
-        'Accept' => '*/*',
-        'Authorization' => %Q(AuthSub token="#{token}")
-      }
-      url = "#{self.prefix}#{url}" unless url =~ /\Ahttp:/
-      request(:url => url, :headers =>headers)
-    end
-        
+
+
     private
   
     # Adds some extra keys to the +attributes+ hash
     def extend_attributes(yt)
       unless yt['entry'].nil?
-        (yt['entry'].is_a?(Array) ? yt['entry'] : [yt['entry']]).each { |v| scan_id(v) }
-      else
+        [yt['entry']].flatten.each { |v| scan_id(v) }
+      else #TODO: to remove ? In witch case is this usefull ?
         scan_id(yt)
       end
       yt
@@ -378,10 +384,10 @@ module YouTubeModel # :nodoc:
         'xmlns:media' => 'http://search.yahoo.com/mrss/',
         'xmlns:yt' => 'http://gdata.youtube.com/schemas/2007' do
         xml.media :group do
-          xml.tag! 'media:title', attrs[:title]
+          xml.tag! 'media:title', attrs[:title], :type => 'plain'
           xml.media :description, attrs[:content], :type => 'plain'
           xml.media :category, attrs[:category], :scheme => 'http://gdata.youtube.com/schemas/2007/categories.cat'
-          xml.media :category, "ytm_#{YT_CONFIG['developer_tag']}", :scheme => 'http://gdata.youtube.com/schemas/2007/developertags.cat'
+#          xml.media :category, "ytm_#{YT_CONFIG['developer_tag']}", :scheme => 'http://gdata.youtube.com/schemas/2007/developertags.cat'
           xml.tag! 'media:keywords', attrs[:keywords]
         end
       end
