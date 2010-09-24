@@ -1,25 +1,4 @@
-module YouTubeModel # :nodoc:
-
-
-  # Call this method to make an ActiveResource model ready to roll with YouTube
-  def acts_as_youtube_model
-    self.site = "http://gdata.youtube.com/feeds/api"
-    self.timeout = 5
-
-    extend SingletonMethods
-    include InstanceMethods
-  end
-
-  module ClassMethods
-    # create a standard request api class method which instanciate some video resource
-    def create_method(name, collection = :collection, &url)
-      define_method name do |*args|
-        instanciate collection do
-          request(url.call(*args))
-        end
-      end
-    end
-  end
+module YouTubeModel
 
   class Collection < Array
     attr_accessor :start_index, :items_per_page, :total_results
@@ -33,34 +12,19 @@ module YouTubeModel # :nodoc:
     end
   end
 
-  module InstanceMethods
-    # Comments for a video.
-
-    def request(*options)
-      self.class.request(*options)
-    end
-
-    def comments(force=false)
-      if @attributes['comments'].nil? or force == true
-        load({ :comments => request(comments_attr.feedLink.href)['entry'] })
-      else
-        @attributes['comments']
+  module Factory
+    # create a standard request api class method which instanciate some video resource
+    def create_finder(name, collection = :collection, &url)
+      define_method name do |*args|
+        instanciate collection do
+          request(url.call(*args))
+        end
       end
     end
-
-    def related_instances
-      self.class.related_to(self)
-    end
-
-    # Responses videos for a video.
-    def responses_to
-      self.class.request(link[1].href)
-    end
-
   end
 
-  module SingletonMethods
-    extend ClassMethods
+  module ClassMethods
+    extend Factory
 
     #Instanciate video by
     def instanciate(type='collection', &block)
@@ -76,11 +40,11 @@ module YouTubeModel # :nodoc:
     # * :this_week (7 days)
     # * :this_month (1 month)
     # * :all_time (default)
-    create_method "top_rated", :collection do |*time|
+    create_finder "top_rated", :collection do |*time|
       "standardfeeds/top_rated#{query_string(:time => time.first || :all_time)}"
     end
 
-    create_method "uploaded_by_user", :collection do |token|
+    create_finder "uploaded_by_user", :collection do |token|
       { :url => "users/default/uploads", :headers => { :auth => token } }
     end
 
@@ -89,7 +53,7 @@ module YouTubeModel # :nodoc:
     # * :this_week (7 days)
     # * :this_month (1 month)
     # * :all_time (default)
-    create_method :top_favorites, :collection do |*time|
+    create_finder :top_favorites, :collection do |*time|
       "standardfeeds/top_favorites#{query_string(:time => time.first || :all_time )}"
     end
 
@@ -98,7 +62,7 @@ module YouTubeModel # :nodoc:
     # * :this_week (7 days)
     # * :this_month (1 month)
     # * :all_time (default)
-    create_method :most_viewed, :collection do |*time|
+    create_finder :most_viewed, :collection do |*time|
       "standardfeeds/most_viewed#{query_string(:time => time.first || :all_time )}"
     end
 
@@ -107,7 +71,7 @@ module YouTubeModel # :nodoc:
     # * :this_week (7 days)
     # * :this_month (1 month)
     # * :all_time (default)
-    create_method :most_recent, :collection do |*time|
+    create_finder :most_recent, :collection do |*time|
       "standardfeeds/most_recent#{query_string(:time => time.first || :all_time )}"
     end
 
@@ -116,7 +80,7 @@ module YouTubeModel # :nodoc:
     # * :this_week (7 days)
     # * :this_month (1 month)
     # * :all_time (default)
-    create_method :most_discussed, :collection do |*time|
+    create_finder :most_discussed, :collection do |*time|
       "standardfeeds/most_discussed#{query_string(:time => time.first || :all_time )}"
     end
 
@@ -125,7 +89,7 @@ module YouTubeModel # :nodoc:
     # * :this_week (7 days)
     # * :this_month (1 month)
     # * :all_time (default)
-    create_method :most_linked, :collection do |*time|
+    create_finder :most_linked, :collection do |*time|
       "standardfeeds/most_linked#{query_string(:time => time.first || :all_time )}"
     end
 
@@ -134,63 +98,63 @@ module YouTubeModel # :nodoc:
     # * :this_week (7 days)
     # * :this_month (1 month)
     # * :all_time (default)
-    create_method :most_responded, :collection do |*time|
+    create_finder :most_responded, :collection do |*time|
       "standardfeeds/most_responded#{query_string(:time => time.first || :all_time )}"
     end
-      
+
     # Retrieve the recently featured videos.
-    create_method :recently_featured, :collection do
+    create_finder :recently_featured, :collection do
       "standardfeeds/recently_featured"
     end
 
 
     # Retrieve the videos watchables on mobile.
-    create_method :watch_on_mobile, :collection do
+    create_finder :watch_on_mobile, :collection do
       "standardfeeds/watch_on_mobile"
     end
 
     # Finds videos by categories or keywords.
-    # 
+    #
     # Capitalize words if you refer to a category.
-    # 
+    #
     # You can use the operators +NOT+(-) and +OR+(|). For example:
     #   find_by_category_and_tag('cats|dogs', '-rats', 'Comedy')
-    create_method :find_by_category_and_tag, :collection do |*tags_and_cats|
+    create_finder :find_by_category_and_tag, :collection do |*tags_and_cats|
       "videos/-/#{tags_and_cats.map{ |t| CGI::escape(t) }.join('/')}"
     end
 
     # Finds videos by tags (keywords).
-    # 
+    #
     # You can use the operators +NOT+(-) and +OR+(|). For example:
     #   find_by_tag('cats|dogs', '-rats')
-    create_method :find_by_tag, :collection do |*tags|
+    create_finder :find_by_tag, :collection do |*tags|
       url = "videos/-/%7Bhttp%3A%2F%2Fgdata.youtube.com%2Fschemas%2F2007%2Fkeywords.cat%7D"
       keywords = tags.map{ |t| CGI::escape(t) }.join('/')
       "#{url}#{keywords}"
     end
 
     # Finds videos by tags (keywords).
-    # 
+    #
     # You can use the operators +NOT+(-) and +OR+(|). For example:
     #   find_by_tag('cats|dogs', '-rats')
-    create_method :find_by_category, :collection do |*categories|
+    create_finder :find_by_category, :collection do |*categories|
       url = "videos/-/%7Bhttp%3A%2F%2Fgdata.youtube.com%2Fschemas%2F2007%2Fcategories.cat%7D"
       keywords = categories.map{ |c| CGI::escape(c) }.join('/')
       "#{url}#{keywords}"
     end
 
     # Find uploaded videos by a user.
-    create_method :uploaded_by, :collection do |username|
+    create_finder :uploaded_by, :collection do |username|
       "users/#{username}/uploads"
     end
 
     # Related videos for a video.
-    create_method :related_to, :collection do |inst|
+    create_finder :related_to, :collection do |inst|
       inst.link[2].href
     end
 
 
-  
+
 
     # Find a video through a search query. Options are:
     # * :orderby (:relevance, :published, :viewCount, :rating)
@@ -200,11 +164,11 @@ module YouTubeModel # :nodoc:
     # * :lr
     # * :racy (:include, :exclude)
     # * :restriction
-    # 
+    #
     # See options details at {YouTube API}[http://code.google.com/apis/youtube/developers_guide_protocol.html#Searching_for_Videos]
-    # 
+    #
     # Note: +alt+ option is still in researching because it causes some errors.
-    create_method :find, :collection do |*args|
+    create_finder :find, :collection do |*args|
       options = (args.size == 2) ? args.last : {}
       options[:vq] = args.first
       options[:orderby] ||= :relevance
@@ -229,88 +193,37 @@ module YouTubeModel # :nodoc:
     #   http://www.youtube.com/watch?v=JMDcOViViNY
     # Here the id is: *JMDcOViViNY* NOTE: this method returns the video itself,
     # no need to call @yt.video
-    create_method :find_by_id, :singular do |id|
+    create_finder :find_by_id, :singular do |id|
       "videos/?q=#{id}"
     end
-    
+
+
+
     # Fetchs few YouTube categories
     def video_categories
       [["Film & Animation", "Film"], ["Autos & Vehicles", "Autos"], ["Music", "Music"], ["Pets & Animals", "Animals"], ["Sports", "Sports"],
-      ["Travel & Events", "Travel"], ["News & Politics", "News"], ["Howto & Style", "Howto"], ["Gaming", "Games"], ["Comedy", "Comedy"], 
-      ["People & Blogs", "People"], ["Entertainment", "Entertainment"], ["Education", "Education"], ["Nonprofits & Activism", "Nonprofit"], 
+      ["Travel & Events", "Travel"], ["News & Politics", "News"], ["Howto & Style", "Howto"], ["Gaming", "Games"], ["Comedy", "Comedy"],
+      ["People & Blogs", "People"], ["Entertainment", "Entertainment"], ["Education", "Education"], ["Nonprofits & Activism", "Nonprofit"],
       ["Science & Technology", "Tech"]]
     end
-    
+
     # Fetchs all YouTube categories
     def categories
       connection.get('/schemas/2007/categories.cat')['category']
     end
-    
+
     # Returns an array with only the +label+ and +term+ attributes of categories.
     def categories_collection
       categories.collect { |cat|
         [cat['label'], cat['term']]
       }
     end
-    
 
-
-    def upload_video(meta)
-      xml_entry = build_xml_entry(meta)
-      data = %{--bbe873dc\r
-Content-Type: application/atom+xml; charset=UTF-8
-
-#{xml_entry}\r
---bbe873dc\r
-Content-Type: #{meta[:file].content_type}
-Content-Transfer-Encoding: binary
-
-#{meta[:file].read}\r
---bbe873dc--\r\n}
-
-      response = request(:method => :post,
-        :url => "http://uploads.gdata.youtube.com/feeds/api/users/default/uploads",
-        :data => data,
-        :headers => {
-          :auth => meta[:auth_sub],
-          :length => data.length,
-          'GData-Version' => "2",
-          'Slug' => meta[:file].original_filename,
-          'Host' => 'uploads.gdata.youtube.com',
-          'Connection' => 'close',
-          'Content-Type' => 'multipart/related; boundary="bbe873dc"'
-        })
-      debugger
-
-
-      upload = {}
-      (Hpricot.XML(response.body)/:response).each do |elm|
-        upload[:url] = "#{(elm/:url).text}?#{{:nexturl => meta[:nexturl]}.to_query}"
-        upload[:token] = (elm/:token).text
-      end if response.code == "200"
-      upload[:code] = response.code
-
-      upload
-
-    end
-    
-    def delete_video(video_id, token)
-      request :method => :delete, :url => "users/default/uploads/#{video_id}", :headers => { :accept => :xml, :auth => token }
-    end
-    
-    def update_video(video_id, token, video_params)
-      xml_entry = build_xml_entry(video_params)
-      request :method => :put,
-              :url => "users/default/uploads/#{video_id}",
-              :data => xml_entry,
-              :headers => {:accept => :xml, :auth => token, :length => xml_entry.length }
-    end
-    
     # Find status of video uploaded by a user.
     def video_status(token, video_id)
       request :url => "users/default/uploads/#{video_id}", :headers => {:auth => token}
     end
-    
+
     def videos_with_user_as_default(token)
       request :url => "users/default/uploads", :headers => {:auth => token}
     end
@@ -356,7 +269,7 @@ Content-Transfer-Encoding: binary
 
 
     private
-  
+
     # Adds some extra keys to the +attributes+ hash
     def extend_attributes(yt)
       unless yt['entry'].nil?
@@ -366,7 +279,7 @@ Content-Transfer-Encoding: binary
       end
       yt
     end
-    
+
     # Renames the +id+ key to +api_id+ and leaves the simple video id on the +id+ key
     # Plus rename comments to comments_attr in order to avoid conflicts whith the instance method
     def scan_id(attrs)
@@ -375,7 +288,7 @@ Content-Transfer-Encoding: binary
       attrs['comments_attr'] = attrs.delete('comments') if attrs['comments']
       attrs
     end
-    
+
     # Builds the XML content to do the POST to obtain the upload url and token.
     def build_xml_entry(attrs)
       xml = Builder::XmlMarkup.new(:indent => 2)
@@ -393,5 +306,98 @@ Content-Transfer-Encoding: binary
       end
       xml.target!
     end
+  end
+  module CRUDMethods
+    def upload_video(meta)
+      xml_entry = build_xml_entry(meta)
+      data = %{--bbe873dc\r
+Content-Type: application/atom+xml; charset=UTF-8
+
+#{xml_entry}\r
+--bbe873dc\r
+Content-Type: #{meta[:file].content_type}
+Content-Transfer-Encoding: binary
+
+#{meta[:file].read}\r
+--bbe873dc--\r\n}
+
+      response = request(:method => :post,
+        :url => "http://uploads.gdata.youtube.com/feeds/api/users/default/uploads",
+        :data => data,
+        :headers => {
+          :auth => meta[:auth_sub],
+          :length => data.length,
+          'GData-Version' => "2",
+          'Slug' => meta[:file].original_filename,
+          'Host' => 'uploads.gdata.youtube.com',
+          'Connection' => 'close',
+          'Content-Type' => 'multipart/related; boundary="bbe873dc"'
+        })
+
+
+    end
+
+    def delete_video(video_id, token)
+      request :method => :delete, :url => "users/default/uploads/#{video_id}", :headers => { :accept => :xml, :auth => token }
+    end
+
+    def update_video(video_id, token, video_params)
+      xml_entry = build_xml_entry(video_params)
+      request :method => :put,
+              :url => "users/default/uploads/#{video_id}",
+              :data => xml_entry,
+              :headers => {:accept => :xml, :auth => token, :length => xml_entry.length }
+    end
+  end
+  module InstanceMethods
+    # Comments for a video.
+
+    def request(*options)
+      self.class.request(*options)
+    end
+
+    def comments(force=false)
+      if @attributes['comments'].nil? or force == true
+        load({ :comments => request(comments_attr.feedLink.href)['entry'] })
+      else
+        @attributes['comments']
+      end
+    end
+
+    def related_instances
+      self.class.related_to(self)
+    end
+
+    # Responses videos for a video.
+    def responses_to
+      self.class.request(link[1].href)
+    end
+
+  end
+
+  class YouTubeModel::Base < ActiveResource::Base # :nodoc:
+
+    self.site = "http://gdata.youtube.com/feeds/api"
+    self.timeout = 5
+
+    extend ClassMethods
+    include CRUDMethods
+    include InstanceMethods
+
+
+    # Call this method to make an ActiveResource model ready to roll with YouTube
+  #  def acts_as_youtube_model
+  #    self.site = "http://gdata.youtube.com/feeds/api"
+  #    self.timeout = 5
+  #
+  #    extend ClassMethods
+  #    include InstanceMethods
+  #  end
+
+
+
+
+
+
   end
 end
