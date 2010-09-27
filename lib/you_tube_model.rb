@@ -25,7 +25,7 @@ module YouTubeModel
   module Factory
 
     def self.extended(base)
-      base.class_inheritable_accessor :default_finder_options
+      base.attr_accessor :default_youtube_options
     end
 
     # create a standard request api class method which instanciate some video resource
@@ -104,7 +104,7 @@ module YouTubeModel
 
     def finder_options(standard_options={}, custom_options={})
       standard_options.stringify_keys!.assert_valid_keys(['startIndex', 'itemsPerPage'])
-      query_string default_finder_options.update(standard_options).update(custom_options)
+      query_string default_youtube_options.update(standard_options).update(custom_options)
     end
 
 
@@ -260,7 +260,7 @@ Content-Transfer-Encoding: binary
     include CRUDMethods
     include InstanceMethods
 
-    self.default_finder_options ||= {}
+    self.default_youtube_options ||= {}
 
     # Retrieve the top rated videos for a time. Valid times are:
     # * :today (1 day)

@@ -10,6 +10,8 @@ class Video < YouTubeModel::Base
     attribute :token, :string
   end
 
+  self.default_youtube_options= {:itemPerPage => 10}
+
   validates_presence_of :title
   validates_presence_of :file, :if => Proc.new{|video| video.new? }
 end
