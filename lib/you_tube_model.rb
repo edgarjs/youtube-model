@@ -49,7 +49,6 @@ module YouTubeModel
       if [:post,:put].include? options[:method]
         connection.send(options[:method], options[:url], options[:data].to_s, options[:headers])
       else
-        debugger
         connection.send(options[:method], options[:url], options[:headers])
       end
     end
@@ -60,7 +59,7 @@ module YouTubeModel
     #   - :length => content_size,
     #   - :accept => [:all, :xml]
     def request_headers(params={})
-      h = {'Accept' => '*/*', 'X-GData-Key' => "key=#{self.const_get('YT_CONFIG')['auth_sub']['developer_key']}"}
+      h = {'Accept' => '*/*', 'GData-Version' => "2", 'X-GData-Key' => "key=#{self.const_get('YT_CONFIG')['auth_sub']['developer_key']}"}
       if accept = params.delete(:accept) and accept.to_s == 'xml'
         h.update('Accept' => 'application/atom+xml')
       end
@@ -133,14 +132,7 @@ module YouTubeModel
       }
     end
 
-    # Find status of video uploaded by a user.
-    def video_status(token, video_id)
-      request :url => "users/default/uploads/#{video_id}", :headers => {:auth => token}
-    end
 
-    def videos_with_user_as_default(token)
-      request :url => "users/default/uploads", :headers => {:auth => token}
-    end
 
   end
   module CRUDMethods
@@ -163,7 +155,6 @@ Content-Transfer-Encoding: binary
         :headers => {
           :auth => token,
           :length => data.length,
-          'GData-Version' => "2",
           'Slug' => File.basename(file.instance_variable_get('@original_path')),
           'Host' => 'uploads.gdata.youtube.com',
           'Connection' => 'close',
@@ -216,10 +207,6 @@ Content-Transfer-Encoding: binary
   module InstanceMethods
     # Comments for a video.
 
-    def request(*options)
-      self.class.request(*options)
-    end
-
     def comments(force=false)
       if @attributes['comments'].nil? or force == true
         load({ :comments => request(comments_attr.feedLink.href)['entry'] })
@@ -233,8 +220,24 @@ Content-Transfer-Encoding: binary
 
     # Responses videos for a video.
     def responses_to
-      self.class.request(link[1].href)
+      request(link[1].href)
     end
+
+    def status(force=false)
+      if force or not attributes['control']
+        self.class.find_by_id(id, :token => token)
+        control.state
+      else
+        control.state
+      end
+    end
+
+
+
+    def request(*options)
+      self.class.request(*options)
+    end
+
 
     protected
 
@@ -417,9 +420,20 @@ Content-Transfer-Encoding: binary
     #   http://www.youtube.com/watch?v=JMDcOViViNY
     # Here the id is: *JMDcOViViNY* NOTE: this method returns the video itself,
     # no need to call @yt.video
-    create_finder :find_by_id, :singular do |video_id|
-      "videos/#{video_id}?v=2"
+    create_finder :find_by_id, :singular do |*params|
+      options = params.extract_options!.symbolize_keys!
+      video_id = params.first
+      if options[:token]
+        { :url => "users/default/uploads/#{video_id}", :headers => { :accept => :xml, :auth => options[:token] } }
+      else
+        "videos/#{video_id}"
+      end
     end
+
+#   # Find status of video uploaded by a user.
+#    def status
+#      request :url => "users/default/uploads/#{id}", :headers => {:auth => token}
+#    end
 
   end
 end
