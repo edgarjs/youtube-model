@@ -49,6 +49,7 @@ module YouTubeModel
       if [:post,:put].include? options[:method]
         connection.send(options[:method], options[:url], options[:data].to_s, options[:headers])
       else
+        debugger
         connection.send(options[:method], options[:url], options[:headers])
       end
     end
