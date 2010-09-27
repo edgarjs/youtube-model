@@ -13,7 +13,9 @@ class Video < YouTubeModel::Base
   validates_presence_of :title
   validates_presence_of :file, :if => Proc.new{|video| video.new? }
 end
-class YouTubeTest < Test::Unit::TestCase
+
+class YouTubeModelTest < Test::Unit::TestCase
+
   def setup
     @video = Video.new
     @token = 'test'
@@ -30,14 +32,14 @@ class YouTubeTest < Test::Unit::TestCase
 
   def test_collection_finders
     register_uri :get, /gdata.youtube.com/, 'videos'
-    @videos = Video.top_rated
+    @videos = Video.top_rated(:startIndex => 10)
     assert @videos.is_a?(YouTubeModel::Collection)
     assert @videos.first.is_a?(Video)
     assert_equal "dMH0bHeiRNg", @videos.first.id
   end
 
   def test_singular_finder
-    register_uri :get, "http://gdata.youtube.com/feeds/api/videos/dMH0bHeiRNg?v=2", 'video'
+    register_uri :get, "http://gdata.youtube.com/feeds/api/videos/dMH0bHeiRNg", 'video'
     @video = Video.find_by_id("dMH0bHeiRNg")
     assert @video.is_a?(Video)
     assert_equal "4fDTbIIlggE", @video.id
