@@ -28,13 +28,14 @@ class YouTubeModelTest < Test::Unit::TestCase
   end
 
   def test_struct
+    assert_equal(Video.default_youtube_options, {:itemPerPage => 10})
     assert Video.respond_to?(:create_finder)
     assert Video.respond_to?(:top_rated), "custom finder is not associated to the YouTubeModel::Base"
   end
 
   def test_collection_finders
-    register_uri :get, /gdata.youtube.com/, 'videos'
-    @videos = Video.top_rated(:startIndex => 10)
+    register_uri :get, "http://gdata.youtube.com/feeds/api/standardfeeds/top_rated?itemPerPage=10&startIndex=5&time=all_time", 'videos'
+    @videos = Video.top_rated(:startIndex => 5)
     assert @videos.is_a?(YouTubeModel::Collection)
     assert @videos.first.is_a?(Video)
     assert_equal "dMH0bHeiRNg", @videos.first.id

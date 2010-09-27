@@ -25,7 +25,7 @@ module YouTubeModel
   module Factory
 
     def self.extended(base)
-      base.attr_accessor :default_youtube_options
+      base.class_inheritable_accessor :default_youtube_options
     end
 
     # create a standard request api class method which instanciate some video resource
@@ -51,11 +51,12 @@ module YouTubeModel
       options = { :url => options } if options.is_a?(String)
       options[:method] ||= :get
       options[:url] = options[:url] =~ /\Ahttp:/ ? options[:url] : "#{self.prefix}#{options[:url]}"
+      options[:url] += finder_options(options[:params]) if options[:params]
       options[:headers] = request_headers(options[:headers] || {})
       if [:post,:put].include? options[:method]
         connection.send(options[:method], options[:url], options[:data].to_s, options[:headers])
       else
-        connection.send(options[:method], options[:url] + options[:params].to_s, options[:headers])
+        connection.send(options[:method], options[:url], options[:headers])
       end
     end
 
@@ -102,9 +103,9 @@ module YouTubeModel
       attrs
     end
 
-    def finder_options(standard_options={}, custom_options={})
-      standard_options.stringify_keys!.assert_valid_keys(['startIndex', 'itemsPerPage'])
-      query_string default_youtube_options.update(standard_options).update(custom_options)
+    def finder_options(options={})
+#      standard_options.stringify_keys!.assert_valid_keys(['startIndex', 'itemsPerPage'])
+      query_string default_youtube_options.dup.update(options)
     end
 
 
@@ -267,14 +268,13 @@ Content-Transfer-Encoding: binary
     # * :this_week (7 days)
     # * :this_month (1 month)
     # * :all_time (default)
-    create_finder "top_rated", :collection do |*params|
-      {:url => "standardfeeds/top_rated", :params => finder_options(params.extract_options!, :time => (params.first || :all_time)) }
+    create_finder :top_rated, :collection do |*params|
+      {
+        :url => "standardfeeds/top_rated",
+        :params => params.extract_options!.update(:time => (params.first || :all_time))
+      }
     end
 
-    create_finder :uploaded_by_user, :collection do |*options|
-      token = options.extract_options!.symoblize_keys.delete(:auth) or raise TokenRequiredError
-      { :url => "users/default/uploads", :params => finder_options(options), :headers => { :auth => token } }
-    end
 
     # Retrieve the most viewed videos for a time. Valid times are:
     # * :today (1 day)
@@ -282,7 +282,7 @@ Content-Transfer-Encoding: binary
     # * :this_month (1 month)
     # * :all_time (default)
     create_finder :top_favorites, :collection do |*params|
-      { :url => "standardfeeds/top_favorites", :params => finder_options(params.extract_options!, :time => (params.first || :all_time) ) }
+      { :url => "standardfeeds/top_favorites", :params => params.extract_options!.update(:time => (params.first || :all_time) ) }
     end
 
     # Retrieve the most viewed videos for a time. Valid times are:
@@ -291,7 +291,7 @@ Content-Transfer-Encoding: binary
     # * :this_month (1 month)
     # * :all_time (default)
     create_finder :most_viewed, :collection do |*params|
-      { :url => "standardfeeds/most_viewed", :params => finder_options(params.extract_options!, :time => (params.first || :all_time) ) }
+      { :url => "standardfeeds/most_viewed", :params => params.extract_options!.update(:time => (params.first || :all_time) ) }
     end
 
     # Retrieve the most viewed videos for a time. Valid times are:
@@ -300,7 +300,7 @@ Content-Transfer-Encoding: binary
     # * :this_month (1 month)
     # * :all_time (default)
     create_finder :most_recent, :collection do |*params|
-      { :url => "standardfeeds/most_recent", :params => finder_options(params.extract_options!, :time => (params.first || :all_time) ) }
+      { :url => "standardfeeds/most_recent", :params => params.extract_options!.update(:time => (params.first || :all_time) ) }
     end
 
     # Retrieve the most viewed videos for a time. Valid times are:
@@ -309,7 +309,7 @@ Content-Transfer-Encoding: binary
     # * :this_month (1 month)
     # * :all_time (default)
     create_finder :most_discussed, :collection do |*params|
-      { :url => "standardfeeds/most_discussed", :params => finder_options(params.extract_options!, :time => (params.first || :all_time) ) }
+      { :url => "standardfeeds/most_discussed", :params => params.extract_options!.update(:time => (params.first || :all_time) ) }
     end
 
     # Retrieve the most viewed videos for a time. Valid times are:
@@ -318,7 +318,7 @@ Content-Transfer-Encoding: binary
     # * :this_month (1 month)
     # * :all_time (default)
     create_finder :most_linked, :collection do |*params|
-      { :url => "standardfeeds/most_linked", :params => finder_options(params.extract_options!, :time => (params.first || :all_time) ) }
+      { :url => "standardfeeds/most_linked", :params => params.extract_options!.update(:time => (params.first || :all_time) ) }
     end
 
     # Retrieve the most viewed videos for a time. Valid times are:
@@ -327,18 +327,18 @@ Content-Transfer-Encoding: binary
     # * :this_month (1 month)
     # * :all_time (default)
     create_finder :most_responded, :collection do |*params|
-      { :url => "standardfeeds/most_responded",  :params => finder_options(params.extract_options!, :time => (params.first || :all_time) ) }
+      { :url => "standardfeeds/most_responded",  :params => params.extract_options!.update(:time => (params.first || :all_time) ) }
     end
 
     # Retrieve the recently featured videos.
     create_finder :recently_featured, :collection do |*params|
-      { :url => "standardfeeds/recently_featured", :params => finder_options(params.extract_options) }
+      { :url => "standardfeeds/recently_featured", :params => params.extract_options }
     end
 
 
     # Retrieve the videos watchables on mobile.
     create_finder :watch_on_mobile, :collection do |*params|
-      {:url => "standardfeeds/watch_on_mobile", :params => finder_options(params.extract_options) }
+      {:url => "standardfeeds/watch_on_mobile", :params => params.extract_options }
     end
 
     # Finds videos by categories or keywords.
@@ -349,7 +349,7 @@ Content-Transfer-Encoding: binary
     #   find_by_category_and_tag('cats|dogs', '-rats', 'Comedy')
     create_finder :find_by_category_and_tag, :collection do |*params|
       options = params.extract_options!
-      { :url => "videos/-/#{params.map{ |t| CGI::escape(t) }.join('/')}", :params => finder_options(options) }
+      { :url => "videos/-/#{params.map{ |t| CGI::escape(t) }.join('/')}", :params => options }
     end
 
     # Finds videos by tags (keywords).
@@ -360,7 +360,7 @@ Content-Transfer-Encoding: binary
       options = params.extract_options!
       url = "videos/-/%7Bhttp%3A%2F%2Fgdata.youtube.com%2Fschemas%2F2007%2Fkeywords.cat%7D"
       keywords = params.map{ |t| CGI::escape(t) }.join('/')
-      { :url => "#{url}#{keywords}", :params => finder_options(options) }
+      { :url => "#{url}#{keywords}", :params => options }
     end
 
     # Finds videos by tags (keywords).
@@ -371,14 +371,15 @@ Content-Transfer-Encoding: binary
       options = params.extract_options!
       url = "videos/-/%7Bhttp%3A%2F%2Fgdata.youtube.com%2Fschemas%2F2007%2Fcategories.cat%7D"
       keywords = params.map{ |c| CGI::escape(c) }.join('/')
-      { :url => "#{url}#{keywords}", :params => finder_options(options) }
+      { :url => "#{url}#{keywords}", :params => options }
     end
 
     # Find uploaded videos by a user.
     create_finder :uploaded_by, :collection do |*params|
       options = params.extract_options!
-      { :url => "users/#{params.first}/uploads", :params => finder_options(options) }
+      { :url => "users/#{params.first}/uploads", :params => options }
     end
+
 
     # Related videos for a video.  ???
     create_finder :related_to, :collection do |inst|
@@ -411,15 +412,10 @@ Content-Transfer-Encoding: binary
       "videos#{query_string(params)}"
     end
 
-#    def find(query, options = {})
-#      options[:vq] = query
-#      options[:orderby] ||= :relevance
-#      options.delete(:alt)
-#      params = Hash[*options.stringify_keys.collect{ |k, v|
-#          [k.dasherize, v] }.flatten
-#      ]
-#      request("videos#{query_string(params)}")
-#    end
+    create_finder :uploaded_by_user, :collection do |*options|
+      token = options.extract_options!.symoblize_keys.delete(:auth) or raise TokenRequiredError
+      { :url => "users/default/uploads", :params => options, :headers => { :auth => token } }
+    end
 
     # Search for a specific video by its ID.
     #   http://www.youtube.com/watch?v=JMDcOViViNY
@@ -434,11 +430,6 @@ Content-Transfer-Encoding: binary
         "videos/#{video_id}"
       end
     end
-
-#   # Find status of video uploaded by a user.
-#    def status
-#      request :url => "users/default/uploads/#{id}", :headers => {:auth => token}
-#    end
 
   end
 end
