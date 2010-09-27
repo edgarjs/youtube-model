@@ -47,8 +47,8 @@ module YouTubeModel # :nodoc:
     #
     def youtube_auth_url(next_url)
       params = {
-        :session => YT_CONFIG['auth_sub']['session'],
-        :secure => YT_CONFIG['auth_sub']['secure'],
+        :session => YouTubeModel::Base::YT_CONFIG['auth_sub']['session'],
+        :secure => YouTubeModel::Base::YT_CONFIG['auth_sub']['secure'],
         :scope => 'http://gdata.youtube.com',
         :next => next_url
       }

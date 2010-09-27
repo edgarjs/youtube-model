@@ -1,4 +1,4 @@
-class <%= class_name %> < YoutubeModel::Base #inherits from ActiveResource::Base
+class <%= class_name %> < YouTubeModel::Base #inherits from ActiveResource::Base
   schema do
     attribute :title, :string
     attribute :description, :string
