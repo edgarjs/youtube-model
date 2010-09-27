@@ -1,59 +1,55 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<feed xmlns='http://www.w3.org/2005/Atom' xmlns:media='http://search.yahoo.com/mrss/' xmlns:openSearch='http://a9.com/-/spec/opensearchrss/1.0/' xmlns:gd='http://schemas.google.com/g/2005' xmlns:yt='http://gdata.youtube.com/schemas/2007'>
-  <id>http://gdata.youtube.com/feeds/api/videos</id>
-  <updated>2010-09-24T15:59:36.133Z</updated>
+<entry xmlns='http://www.w3.org/2005/Atom' xmlns:app='http://www.w3.org/2007/app' xmlns:media='http://search.yahoo.com/mrss/' xmlns:gd='http://schemas.google.com/g/2005' xmlns:yt='http://gdata.youtube.com/schemas/2007' gd:etag='W/&quot;D0cNRH47eCp7ImA9Wx5WFUU.&quot;'>
+  <id>tag:youtube.com,2008:video:4fDTbIIlggE</id>
+  <published>2010-09-27T10:58:15.000Z</published>
+  <updated>2010-09-27T10:58:15.000Z</updated>
+  <app:edited>2010-09-27T10:58:15.000Z</app:edited>
+  <app:control>
+  <app:draft>yes</app:draft>
+  <yt:state name='processing'/>
+  </app:control>
   <category scheme='http://schemas.google.com/g/2005#kind' term='http://gdata.youtube.com/schemas/2007#video'/>
-  <title type='text'>YouTube Videos matching query: dMH0bHeiRNg</title>
-  <logo>http://www.youtube.com/img/pic_youtubelogo_123x63.gif</logo>
-  <link rel='alternate' type='text/html' href='http://www.youtube.com'/>
-  <link rel='http://schemas.google.com/g/2005#feed' type='application/atom+xml' href='http://gdata.youtube.com/feeds/api/videos'/>
-  <link rel='http://schemas.google.com/g/2005#batch' type='application/atom+xml' href='http://gdata.youtube.com/feeds/api/videos/batch'/>
-  <link rel='self' type='application/atom+xml' href='http://gdata.youtube.com/feeds/api/videos?q=dMH0bHeiRNg&amp;start-index=1&amp;max-results=25'/>
+  <category scheme='http://gdata.youtube.com/schemas/2007/categories.cat' term='Film' label='Film &amp; Animation'/>
+  <category scheme='http://gdata.youtube.com/schemas/2007/keywords.cat' term='io'/>
+  <title>test io</title>
+  <link rel='alternate' type='text/html' href='http://www.youtube.com/watch?v=4fDTbIIlggE&amp;feature=youtube_gdata'/>
+  <link rel='http://gdata.youtube.com/schemas/2007#video.responses' type='application/atom+xml' href='http://gdata.youtube.com/feeds/api/videos/4fDTbIIlggE/responses'/>
+  <link rel='http://gdata.youtube.com/schemas/2007#video.ratings' type='application/atom+xml' href='http://gdata.youtube.com/feeds/api/videos/4fDTbIIlggE/ratings'/>
+  <link rel='http://gdata.youtube.com/schemas/2007#video.complaints' type='application/atom+xml' href='http://gdata.youtube.com/feeds/api/videos/4fDTbIIlggE/complaints'/>
+  <link rel='http://gdata.youtube.com/schemas/2007#video.related' type='application/atom+xml' href='http://gdata.youtube.com/feeds/api/videos/4fDTbIIlggE/related'/>
+  <link rel='http://gdata.youtube.com/schemas/2007#video.captionTracks' type='application/atom+xml' href='http://gdata.youtube.com/feeds/api/videos/4fDTbIIlggE/captions' yt:hasEntries='false'/>
+  <link rel='http://gdata.youtube.com/schemas/2007#insight.views' type='text/html' href='http://insight.youtube.com/video-analytics/csvreports?query=4fDTbIIlggE&amp;type=v&amp;starttime=1284940800000&amp;endtime=1285545600000&amp;user_starttime=1284940800000&amp;user_endtime=1285545600000&amp;region=world&amp;token=_cnmIwqvDoSYEJdWd4Ogc3M4uBR8MTI4NTU4Njg5Ng%3D%3D&amp;hl=en_US'/>
+  <link rel='self' type='application/atom+xml' href='http://gdata.youtube.com/feeds/api/users/morphvfx/uploads/4fDTbIIlggE'/>
+  <link rel='edit' type='application/atom+xml' href='http://gdata.youtube.com/feeds/api/users/morphvfx/uploads/4fDTbIIlggE'/>
   <author>
-    <name>YouTube</name>
-    <uri>http://www.youtube.com/</uri>
+  <name>morphvfx</name>
+  <uri>http://gdata.youtube.com/feeds/api/users/morphvfx</uri>
   </author>
-  <generator version='2.0' uri='http://gdata.youtube.com/'>YouTube data API</generator>
-  <openSearch:totalResults>1</openSearch:totalResults>
-  <openSearch:startIndex>1</openSearch:startIndex>
-  <openSearch:itemsPerPage>25</openSearch:itemsPerPage>
-  <entry>
-    <id>http://gdata.youtube.com/feeds/api/videos/dMH0bHeiRNg</id>
-    <published>2006-04-06T21:30:53.000Z</published>
-    <updated>2010-09-24T13:36:40.000Z</updated>
-    <category scheme='http://schemas.google.com/g/2005#kind' term='http://gdata.youtube.com/schemas/2007#video'/>
-    <category scheme='http://gdata.youtube.com/schemas/2007/categories.cat' term='Comedy' label='Comedy'/>
-    <category scheme='http://gdata.youtube.com/schemas/2007/keywords.cat' term='Dancing'/>
-    <category scheme='http://gdata.youtube.com/schemas/2007/keywords.cat' term='comedy'/>
-    <title type='text'>Evolution of Dance - By Judson Laipply</title>
-    <content type='text'>For more visit www.mightaswelldance.com</content>
-    <link rel='alternate' type='text/html' href='http://www.youtube.com/watch?v=dMH0bHeiRNg&amp;feature=youtube_gdata'/>
-    <link rel='http://gdata.youtube.com/schemas/2007#video.responses' type='application/atom+xml' href='http://gdata.youtube.com/feeds/api/videos/dMH0bHeiRNg/responses'/>
-    <link rel='http://gdata.youtube.com/schemas/2007#video.related' type='application/atom+xml' href='http://gdata.youtube.com/feeds/api/videos/dMH0bHeiRNg/related'/>
-    <link rel='self' type='application/atom+xml' href='http://gdata.youtube.com/feeds/api/videos/dMH0bHeiRNg'/>
-    <author>
-      <name>judsonlaipply</name>
-      <uri>http://gdata.youtube.com/feeds/api/users/judsonlaipply</uri>
-    </author>
-    <gd:comments>
-      <gd:feedLink href='http://gdata.youtube.com/feeds/api/videos/dMH0bHeiRNg/comments' countHint='474745'/>
-    </gd:comments>
-    <media:group>
-      <media:category label='Comedy' scheme='http://gdata.youtube.com/schemas/2007/categories.cat'>Comedy</media:category>
-      <media:content url='http://www.youtube.com/v/dMH0bHeiRNg?f=videos&amp;app=youtube_gdata' type='application/x-shockwave-flash' medium='video' isDefault='true' expression='full' duration='360' yt:format='5'/>
-      <media:content url='rtsp://v5.cache7.c.youtube.com/CiILENy73wIaGQnYRKJ3bPTBdBMYDSANFEgGUgZ2aWRlb3MM/0/0/0/video.3gp' type='video/3gpp' medium='video' expression='full' duration='360' yt:format='1'/>
-      <media:content url='rtsp://v3.cache8.c.youtube.com/CiILENy73wIaGQnYRKJ3bPTBdBMYESARFEgGUgZ2aWRlb3MM/0/0/0/video.3gp' type='video/3gpp' medium='video' expression='full' duration='360' yt:format='6'/>
-      <media:description type='plain'>For more visit www.mightaswelldance.com</media:description>
-      <media:keywords>Dancing, comedy</media:keywords>
-      <media:player url='http://www.youtube.com/watch?v=dMH0bHeiRNg&amp;feature=youtube_gdata_player'/>
-      <media:thumbnail url='http://i.ytimg.com/vi/dMH0bHeiRNg/2.jpg' height='90' width='120' time='00:03:00'/>
-      <media:thumbnail url='http://i.ytimg.com/vi/dMH0bHeiRNg/1.jpg' height='90' width='120' time='00:01:30'/>
-      <media:thumbnail url='http://i.ytimg.com/vi/dMH0bHeiRNg/3.jpg' height='90' width='120' time='00:04:30'/>
-      <media:thumbnail url='http://i.ytimg.com/vi/dMH0bHeiRNg/0.jpg' height='240' width='320' time='00:03:00'/>
-      <media:title type='plain'>Evolution of Dance - By Judson Laipply</media:title>
-      <yt:duration seconds='360'/>
-    </media:group>
-    <gd:rating average='4.667465' max='5' min='1' numRaters='718123' rel='http://schemas.google.com/g/2005#overall'/>
-    <yt:statistics favoriteCount='957501' viewCount='152597975'/>
-  </entry>
-</feed>
+  <yt:accessControl action='comment' permission='allowed'/>
+  <yt:accessControl action='commentVote' permission='allowed'/>
+  <yt:accessControl action='videoRespond' permission='moderated'/>
+  <yt:accessControl action='rate' permission='allowed'/>
+  <yt:accessControl action='embed' permission='allowed'/>
+  <yt:accessControl action='list' permission='allowed'/>
+  <yt:accessControl action='syndicate' permission='allowed'/>
+  <gd:comments>
+  <gd:feedLink href='http://gdata.youtube.com/feeds/api/videos/4fDTbIIlggE/comments' countHint='0'/>
+  </gd:comments>
+  <media:group>
+  <media:category label='Film &amp; Animation' scheme='http://gdata.youtube.com/schemas/2007/categories.cat'>Film</media:category>
+  <media:content url='http://www.youtube.com/v/4fDTbIIlggE?f=user_uploads&amp;d=AS02ERfUp5IBRiPUM2KsrloO88HsQjpE1a8d1GxQnGDm&amp;app=youtube_gdata' type='application/x-shockwave-flash' medium='video' isDefault='true' expression='full' duration='0' yt:format='5'/>
+  <media:credit role='uploader' scheme='urn:youtube'>morphvfx</media:credit>
+  <media:description type='plain'>test</media:description>
+  <media:keywords>io</media:keywords>
+  <media:player url='http://www.youtube.com/watch?v=4fDTbIIlggE&amp;feature=youtube_gdata_player'/>
+  <media:thumbnail url='http://i.ytimg.com/vi/4fDTbIIlggE/default.jpg' height='90' width='120' time='00:00:00'/>
+  <media:thumbnail url='http://i.ytimg.com/vi/4fDTbIIlggE/2.jpg' height='90' width='120' time='00:00:00'/>
+  <media:thumbnail url='http://i.ytimg.com/vi/4fDTbIIlggE/1.jpg' height='90' width='120' time='00:00:00'/>
+  <media:thumbnail url='http://i.ytimg.com/vi/4fDTbIIlggE/3.jpg' height='90' width='120' time='00:00:00'/>
+  <media:thumbnail url='http://i.ytimg.com/vi/4fDTbIIlggE/hqdefault.jpg' height='360' width='480'/>
+  <media:title type='plain'>test io</media:title>
+  <yt:duration seconds='0'/>
+  <yt:uploaded>2010-09-27T10:58:15.000Z</yt:uploaded>
+  <yt:videoid>4fDTbIIlggE</yt:videoid>
+  </media:group>
+</entry>

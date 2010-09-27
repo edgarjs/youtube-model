@@ -27,13 +27,13 @@ class YouTubeTest < Test::Unit::TestCase
   end
 
   def test_singular_finder
-    register_uri :get, /gdata.youtube.com/, 'video'
+    register_uri :get, "http://gdata.youtube.com/feeds/api/videos/dMH0bHeiRNg?v=2", 'video'
     @video = Video.find_by_id("dMH0bHeiRNg")
     assert @video.is_a?(Video)
-    assert_equal "dMH0bHeiRNg", @video.id
-    assert_equal "For more visit www.mightaswelldance.com", @video.description
-    assert_equal ['dancing', 'comedy'], @video.keywords
-    assert_equal "Comedy", @video.category
+    assert_equal "4fDTbIIlggE", @video.id
+    assert_equal "test", @video.description
+    assert_equal ['io'], @video.keywords
+    assert_equal "Film", @video.category
   end
 
 
@@ -48,7 +48,7 @@ class YouTubeTest < Test::Unit::TestCase
   def create
     register_uri :post, /uploads.gdata.youtube.com/, 'video'
     @video = Video.create(:title => "test",:file => fixture_file_upload('files/sample_iTunes.mov', 'application/octet-stream'))
-    assert_equal @video.id, "dMH0bHeiRNg"
+    assert_equal @video.id, "4fDTbIIlggE"
     assert @video.is_a?(Video)
   end
 
@@ -56,8 +56,8 @@ class YouTubeTest < Test::Unit::TestCase
     @video = Video.new(:id => "dMH0bHeiRNg", :title => 'test', :token => 'io')
     register_uri :put, "http://gdata.youtube.com/feeds/api/users/default/uploads/dMH0bHeiRNg", 'video'
     assert @video.save
-    assert_equal 'dMH0bHeiRNg', @video.id
-    assert_equal "Evolution of Dance - By Judson Laipply", @video.title
+    assert_equal '4fDTbIIlggE', @video.id
+    assert_equal "test io", @video.title
   end
 
   def test_delete

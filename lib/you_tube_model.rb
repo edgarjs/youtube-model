@@ -29,20 +29,10 @@ module YouTubeModel
         if collection.to_s == 'collection'
           Collection.new self, parsed_xml
         else
-          new parsed_xml['entry']
+          new parsed_xml
         end
       end
     end
-#
-#    #Instanciate video by
-#    def instanciate(type='collection', &block)
-#      col = Collection.new self do
-#        extend_attributes(block.call)
-#      end
-#      type.to_s == 'collection' ? col : col.first
-#    end
-
-
 
     # Request Google API
     # Receive a simple url String as argument for get request without authentication
@@ -56,7 +46,7 @@ module YouTubeModel
       options[:method] ||= :get
       options[:url] = options[:url] =~ /\Ahttp:/ ? options[:url] : "#{self.prefix}#{options[:url]}"
       options[:headers] = request_headers(options[:headers] || {})
-      if [:post,:put,:delete].include? options[:method]
+      if [:post,:put].include? options[:method]
         connection.send(options[:method], options[:url], options[:data].to_s, options[:headers])
       else
         connection.send(options[:method], options[:url], options[:headers])
@@ -69,7 +59,7 @@ module YouTubeModel
     #   - :length => content_size,
     #   - :accept => [:all, :xml]
     def request_headers(params={})
-      h = {'Accept' => '*/*'}
+      h = {'Accept' => '*/*', 'X-GData-Key' => "key=#{self.const_get('YT_CONFIG')['auth_sub']['developer_key']}"}
       if accept = params.delete(:accept) and accept.to_s == 'xml'
         h.update('Accept' => 'application/atom+xml')
       end
@@ -80,7 +70,7 @@ module YouTubeModel
         h.update('Content-Length' => length.to_s)
       end
       if token = params.delete(:auth)
-        h.update('Authorization' => %Q(AuthSub token="#{token}"), 'X-GData-Key' => "key=#{self.const_get('YT_CONFIG')['auth_sub']['developer_key']}")
+        h.update('Authorization' => %Q(AuthSub token="#{token}"))
       end
       h.update(params)
     end
@@ -160,10 +150,10 @@ Content-Type: application/atom+xml; charset=UTF-8
 
 #{build_xml_entry}\r
 --bbe873dc\r
-Content-Type: #{file.content_type}
+Content-Type: #{file.instance_variable_get('@content_type')}
 Content-Transfer-Encoding: binary
 
-#{meta[:file].read}\r
+#{file.read}\r
 --bbe873dc--\r\n}
 
       rsp= request(:method => :post,
@@ -173,7 +163,7 @@ Content-Transfer-Encoding: binary
           :auth => token,
           :length => data.length,
           'GData-Version' => "2",
-          'Slug' => meta[:file].original_filename,
+          'Slug' => File.basename(file.instance_variable_get('@original_path')),
           'Host' => 'uploads.gdata.youtube.com',
           'Connection' => 'close',
           'Content-Type' => 'multipart/related; boundary="bbe873dc"'
@@ -183,8 +173,9 @@ Content-Transfer-Encoding: binary
 
     end
 
-    def destroy(video_id, token)
-      request :method => :delete, :url => "users/default/uploads/#{video_id}", :headers => { :accept => :xml, :content_type => :xml, :auth => token }
+    def destroy
+      rsp = request :method => :delete, :url => "users/default/uploads/#{id}", :headers => { :accept => :xml, :content_type => :xml, :auth => token }
+      rsp.code == "200"
     end
 
     def request(*args)
@@ -249,7 +240,7 @@ Content-Transfer-Encoding: binary
     # Add extend attributes before loading xml from the API
     def load_attributes_from_response(response)
       if response['Content-Length'] != "0" && response.body.strip.size > 0
-        load(self.class.extend_attributes(self.class.format.decode(response.body)['entry']))
+        load self.class.extend_attributes(self.class.format.decode(response.body))
       end
     end
 
@@ -425,8 +416,8 @@ Content-Transfer-Encoding: binary
     #   http://www.youtube.com/watch?v=JMDcOViViNY
     # Here the id is: *JMDcOViViNY* NOTE: this method returns the video itself,
     # no need to call @yt.video
-    create_finder :find_by_id, :singular do |id|
-      "videos/#{id}"
+    create_finder :find_by_id, :singular do |video_id|
+      "videos/#{video_id}?v=2"
     end
 
   end
