@@ -1,7 +1,17 @@
 require 'test_helper'
 
 class Video < YouTubeModel::Base
+  schema do
+    attribute :title, :string
+    attribute :description, :string
+    attribute :keywords, :string
+    attribute :category, :string
+    attribute :file, :string
+    attribute :token, :string
+  end
 
+  validates_presence_of :title
+  validates_presence_of :file, :if => Proc.new{|video| video.new? }
 end
 class YouTubeTest < Test::Unit::TestCase
   def setup
@@ -64,8 +74,19 @@ class YouTubeTest < Test::Unit::TestCase
 
   end
 
-  def test_validation
+  def test_validation_on_create
+   video = Video.new()
+   assert_equal false, video.valid?
+   assert_equal "can't be blank", video.errors[:title].to_s
+   assert_equal "can't be blank", video.errors[:file].to_s
+   assert_equal 2, video.errors.size
+  end
 
+  def test_validation_on_update
+    video = Video.new(:id => 'test')
+    assert_equal false, video.valid?
+    assert_equal "can't be blank", video.errors[:title].to_s
+    assert_equal 1, video.errors.size
   end
 
 end

@@ -1,3 +1,14 @@
-class <%= class_name %> < ActiveResource::Base
-  acts_as_youtube_model
+class <%= class_name %> < YoutubeModel::Base #inherits from ActiveResource::Base
+  schema do
+    attribute :title, :string
+    attribute :description, :string
+    attribute :keywords, :string
+    attribute :category, :string
+    attribute :file, :string
+    attribute :token, :string
+  end
+
+  validates_presence_of :title
+  validates_presence_of :file, :if => Proc.new{|<%=singular_name%>| <%=singular_name%>.new? }
+
 end
