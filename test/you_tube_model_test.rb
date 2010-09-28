@@ -51,6 +51,11 @@ class YouTubeModelTest < Test::Unit::TestCase
     assert_equal "Film", @video.category
   end
 
+  def test_singular_finder_with_session_token_passed
+    register_uri :get, "http://gdata.youtube.com/feeds/api/users/default/uploads/dMH0bHeiRNg", 'video'
+    @video = Video.find_by_id("dMH0bHeiRNg", :token => 'test')
+    assert @video.is_a?(Video)
+  end
 
   def test_instance_method_comments
     register_uri :get, /gdata.youtube.com/, 'comments'

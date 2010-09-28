@@ -103,9 +103,6 @@ module YouTubeModel
       attrs
     end
 
-
-
-
   end
 
   module ClassMethods
