@@ -51,7 +51,7 @@ module YouTubeModel
       options = { :url => options } if options.is_a?(String)
       options[:method] ||= :get
       options[:url] = options[:url] =~ /\Ahttp:/ ? options[:url] : "#{self.prefix}#{options[:url]}"
-      options[:url] += finder_options(options[:params]) if options[:params]
+      options[:url] += query_string(default_youtube_options.dup.update(options[:params])) if options[:params]
       options[:headers] = request_headers(options[:headers] || {})
       if [:post,:put].include? options[:method]
         connection.send(options[:method], options[:url], options[:data].to_s, options[:headers])
@@ -103,10 +103,6 @@ module YouTubeModel
       attrs
     end
 
-    def finder_options(options={})
-#      standard_options.stringify_keys!.assert_valid_keys(['startIndex', 'itemsPerPage'])
-      query_string default_youtube_options.dup.update(options)
-    end
 
 
 
