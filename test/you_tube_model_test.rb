@@ -80,6 +80,13 @@ class YouTubeModelTest < Test::Unit::TestCase
     assert_equal "test io", @video.title
   end
 
+  def test_update_attributes
+    @video = Video.new(:token => 'io')
+    register_uri :put, "http://gdata.youtube.com/feeds/api/users/default/uploads/dMH0bHeiRNg", 'video'
+    debugger
+    assert @video.update_attributes(:id => "dMH0bHeiRNg", :title => 'test')
+  end
+
   def test_delete
 
   end
