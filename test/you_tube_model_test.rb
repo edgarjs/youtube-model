@@ -75,17 +75,18 @@ class YouTubeModelTest < Test::Unit::TestCase
   def test_update
     @video = Video.new(:id => "dMH0bHeiRNg", :title => 'test', :token => 'io')
     register_uri :put, "http://gdata.youtube.com/feeds/api/users/default/uploads/dMH0bHeiRNg", 'video'
-    assert @video.save
+    assert_equal true, @video.save
     assert_equal '4fDTbIIlggE', @video.id
     assert_equal "test io", @video.title
   end
 
-  def test_update_attributes
-    @video = Video.new(:token => 'io')
-    register_uri :put, "http://gdata.youtube.com/feeds/api/users/default/uploads/dMH0bHeiRNg", 'video'
-    debugger
-    assert @video.update_attributes(:id => "dMH0bHeiRNg", :title => 'test')
-  end
+# Don't handle this kind of exception, we want to be alerted when they occurs
+#  def test_youtube_return_error_on_crud_method
+#    FakeWeb.register_uri(:put, "http://gdata.youtube.com/feeds/api/users/default/uploads/dMH0bHeiRNg", :body => "Bad request", :status => ["404", "Bad request"])
+#    @video = Video.new(:id => "dMH0bHeiRNg", :title => 'test', :token => 'io')
+#    assert_equal false, @video.save
+#    assert_match /Bad request/, @video.errors.to_s
+#  end
 
   def test_delete
 

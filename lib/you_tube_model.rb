@@ -143,6 +143,7 @@ Content-Transfer-Encoding: binary
 #{file.read}\r
 --bbe873dc--\r\n}
 
+
       rsp= request(:method => :post,
         :url => "http://uploads.gdata.youtube.com/feeds/api/users/default/uploads",
         :data => data,
@@ -165,7 +166,12 @@ Content-Transfer-Encoding: binary
     end
 
     def request(*args)
-      self.class.send :request, *args
+#      begin
+        self.class.request(*args)
+#      rescue ActiveResource::ConnectionError => e
+#        self.errors.add(:base, e.message)
+#        raise ActiveResource::ResourceInvalid.new(e.response, e.message)
+#      end
     end
 
     def update
@@ -174,6 +180,7 @@ Content-Transfer-Encoding: binary
               :url => "users/default/uploads/#{id}",
               :data => xml_entry,
               :headers => {:accept => :xml, :content_type => :xml, :auth => token, :length => xml_entry.length }
+
       load_attributes_from_response(rsp)
     end
 
@@ -226,9 +233,6 @@ Content-Transfer-Encoding: binary
       end
     end
 
-    def request(*options)
-      self.class.request(*options)
-    end
 
 
     protected
