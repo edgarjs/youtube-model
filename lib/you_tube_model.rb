@@ -10,7 +10,7 @@ if Debugger.respond_to?(:settings)
 end
 
 module YouTubeModel
-
+  class TokenRequiredError < StandardError; end
   class Collection < Array
     attr_accessor :start_index, :items_per_page, :total_results
 
@@ -51,7 +51,7 @@ module YouTubeModel
       options = { :url => options } if options.is_a?(String)
       options[:method] ||= :get
       options[:url] = options[:url] =~ /\Ahttp:/ ? options[:url] : "#{self.prefix}#{options[:url]}"
-      options[:url] += query_string(default_youtube_options.dup.update(options[:params])) if options[:params]
+      options[:url] += query_string(default_youtube_options.dup.update(options[:params])).to_s if options[:params]
       options[:headers] = request_headers(options[:headers] || {})
       if [:post,:put].include? options[:method]
         connection.send(options[:method], options[:url], options[:data].to_s, options[:headers])
@@ -409,8 +409,9 @@ Content-Transfer-Encoding: binary
       { :url => "videos", :params => params }
     end
 
-    create_finder :uploaded_by_user, :collection do |*options|
-      token = options.extract_options!.symoblize_keys.delete(:auth) or raise TokenRequiredError
+    create_finder :uploaded_by_user, :collection do |*params|
+      options= params.extract_options!.symbolize_keys
+      token = options.delete(:token) or raise TokenRequiredError
       { :url => "users/default/uploads", :params => options, :headers => { :auth => token } }
     end
 
