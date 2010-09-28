@@ -31,7 +31,7 @@ module YouTubeModel
     # create a standard request api class method which instanciate some video resource
     def create_finder(name, collection = :collection, &url)
       (class << self; self; end).send(:define_method, name) do |*args|
-        parsed_xml = extend_attributes(request(url.call(*args)))
+        parsed_xml = extend_attributes(request(url.call(*args)), args.extract_options!.delete(:token))
         if collection.to_s == 'collection'
           Collection.new self, parsed_xml
         else
@@ -83,11 +83,11 @@ module YouTubeModel
     end
 
     # Adds some extra keys to the +attributes+ hash
-    def extend_attributes(yt)
+    def extend_attributes(yt, token=nil)
       if yt['entry']
-        [yt['entry']].flatten.each { |v| refactor_xml(v) }
-      else #TODO: to remove ? In witch case is this usefull ?
-        refactor_xml(yt)
+        [yt['entry']].flatten.each { |v| refactor_xml(v, token) }
+      else
+        refactor_xml(yt,token)
       end
       yt
     end
@@ -95,10 +95,11 @@ module YouTubeModel
     # Renames the +id+ key to +api_id+ and leaves the simple video id on the +id+ key
     # Renames comments to comments_attr in order to avoid conflicts whith the instance method
     # Extract group and update
-    def refactor_xml(attrs)
+    def refactor_xml(attrs,token=nil)
       attrs['id'] = attrs['id'].to_s.scan(/[\w-]+$/).to_s
       attrs['comments_attr'] = attrs.delete('comments') if attrs['comments']
       attrs.update attrs.delete('group') if attrs['group']
+      attrs.update(:token => token) if token
       attrs
     end
 

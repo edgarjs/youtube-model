@@ -40,21 +40,28 @@ class YouTubeModelTest < Test::Unit::TestCase
     assert @videos.first.is_a?(Video)
     assert_equal "dMH0bHeiRNg", @videos.first.id
   end
-
+  def test_collection_finder_with_session_token_passed
+    register_uri :get, "http://gdata.youtube.com/feeds/api/users/default/uploads?itemPerPage=10", 'videos'
+    @videos = Video.uploaded_by_user(:token => 'test_token')
+    assert @videos.all?{|v| v.token == 'test_token'}
+  end
   def test_singular_finder
     register_uri :get, "http://gdata.youtube.com/feeds/api/videos/dMH0bHeiRNg", 'video'
     @video = Video.find_by_id("dMH0bHeiRNg")
     assert @video.is_a?(Video)
     assert_equal "4fDTbIIlggE", @video.id
     assert_equal "test", @video.description
-    assert_equal ['io'], @video.keywords
+    assert_equal 'io', @video.keywords
     assert_equal "Film", @video.category
+
   end
+
 
   def test_singular_finder_with_session_token_passed
     register_uri :get, "http://gdata.youtube.com/feeds/api/users/default/uploads/dMH0bHeiRNg", 'video'
-    @video = Video.find_by_id("dMH0bHeiRNg", :token => 'test')
+    @video = Video.find_by_id("dMH0bHeiRNg", :token => 'test_token')
     assert @video.is_a?(Video)
+    assert_equal "test_token", @video.token
   end
 
   def test_instance_method_comments
