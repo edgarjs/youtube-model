@@ -409,7 +409,7 @@ Content-Transfer-Encoding: binary
       params = Hash[*options.stringify_keys.collect{ |k, v|
           [k.dasherize, v] }.flatten
       ]
-      "videos#{query_string(params)}"
+      { :url => "videos", :params => params }
     end
 
     create_finder :uploaded_by_user, :collection do |*options|
