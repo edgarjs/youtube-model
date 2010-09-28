@@ -39,7 +39,7 @@ h3. AuthSub for web applications
 
 	An authorise method will be added to make the single use token to a session token.
 
-  <code>
+  <pre><code>
   #VideosController
   def authorise
     client = GData::Client::DocList.new
@@ -50,7 +50,7 @@ h3. AuthSub for web applications
     end
     redirect_to videos_path
   end
-	</code>
+	</code></pre>
 	
 	Also add 'include GData' in the videos controller, which includes the module GData for authorisation process. 
 	
@@ -64,32 +64,43 @@ h3. Listing videos
 
 **Example**
   
-To get all the videos uploaded by a user you can use the method @uploaded_by_user@ passing the session[:token] we saved during authorisation process
-All the api finders (except find_by_id) render collections of youtube_model resources. The collection are basically an aray of object, extended with the folling accessor:
+All the api finders (except find_by_id) render collections of youtube_model resources. The collection are basically an aray of objects, extended with the following 3 accessors:
 - start_index
 - items_per_page
 - total_results
+You can pass any youtube argument to the api finders, or set them as default in your youtube model class
 
-You can pass any youtube argument to the api finders, or set them as default in yout youtube model class
+  <pre><code>
+  class Video < YouTubeModel::Base
+   self.default_youtube_options = { :itemPerPage => 10 }
+  end
 
-class Video
-  self.default_youtube_options = { :itemPerPage => 10 }
-end
+  Video.top_rated(:startIndex => 10, :itemPerPage => 30)
+  Video.uploaded_by('nicolas')
+  </code></pre>
+
+@uploaded_by_user@ requires authentication and @find_by_id@ needs it optionally; To use them you have to pass the session[:token] we saved during authorisation process
+Accessing the API with theses finders gives you private information about video status (also accessible via @video.status(:token => session[:token])
+
+  <pre><code>
+  Video.uploaded_by_user(:token => session[:token])
+  Video.find_by_id(video_id,:token => session[:token])
+  </code></pre>
 
 
   <pre><code>
   #VideosController
   def index
-    @videos= Video.uploaded_by_user(session[:token]) if session[:token]
+    @videos= Video.uploaded_by_user(:token => session[:token])
   end
   
   def show
-    @video = YouTube.find_by_id(params[:id]) rescue nil
+    @video = Video.find_by_id(params[:id], :token => session[:token])
     flash[:message] = "Sorry the video is not found at Youtube" and redirect_to videos_path unless @video
   end
 	
-  #app/views/videos/index.html.erb
 
+  #app/views/videos/index.html.erb
 
   <%= "Displaying #{@videos.startIndex} - #{@videos.itemsPerPage} of #{@videos.totalResults}" %>
 
@@ -106,7 +117,7 @@ end
   <% end %>
 
   #app/views/videos/show.html.erb
-	<h1><%= @video.title %></h1>
+	<%= @video.title %>
 	by <%= link_to @video.author.name, "http://youtube.com/#{@video.author.name}" %>
   <%= raw youtube_embed @video %>
    
@@ -165,7 +176,7 @@ in order retrieve a video event it hasn't been processed or accepted by youtube 
     <%= f.text_field :title %>
     
     <%= f.label :description %>
-    <%= f.text_area :content, :rows => 10 %>
+    <%= f.text_area :description, :rows => 10 %>
     
     <%= f.label :category %>
     <%= f.select :category, @categories %>
@@ -183,7 +194,7 @@ h3. Deleting Videos
 To delete the videos of any user you can use the destroy method on a video instance
 
 
-  @YouTube.delete_video(params[:id], session[:token])@
+  @video.destroy@
 
   <pre><code>
   #VideosController
