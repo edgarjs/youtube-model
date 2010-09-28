@@ -4,14 +4,12 @@ This plugin allows you to interact with the new YouTube API (yes, that means upl
 through a simple ActiveResource model. The uploaded video can also be updated and deleted. The changes will be reflected at the youtube.  
 
 UPDATE:  This fork allow youtube model to work as an active resource like. Allowing validation, callback, etc..
-The project is steel on going on my side, so something may still not work but the main functionality (upload, update, remote video collection retrievals) should work properly)
+The project is steel on going on my side, some things may still not work properly, but the main functionality (upload, update, remote video collection retrievals) should work properly)
 
 
 h2. Documentation
 
 h3. Installing
-
-Simply as:
 
   rails plugin install git://github.com/itkin/youtube-model.git
 
@@ -22,7 +20,7 @@ The plugin includes a generator to create a YouTubeModel based on ActiveResource
   rails g youtube_model ModelName
 
 This generator will create four files:
-* An ActiveResource based model under app/models directory.
+* An YouTubeModel inherited from ActiveResource::Base under app/models directory.
 * A yaml configuration file under config directory.
 
 And that's all, but be sure to check the configuration file to set up your Developer and Client Keys.
@@ -41,7 +39,7 @@ h3. AuthSub for web applications
 
 	An authorise method will be added to make the single use token to a session token.
 
-  <pre><code>
+  <code>
   #VideosController
   def authorise
     client = GData::Client::DocList.new
@@ -52,7 +50,7 @@ h3. AuthSub for web applications
     end
     redirect_to videos_path
   end
-	</code></pre>
+	</code>
 	
 	Also add 'include GData' in the videos controller, which includes the module GData for authorisation process. 
 	
