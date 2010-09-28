@@ -99,7 +99,6 @@ module YouTubeModel
       attrs['id'] = attrs['id'].to_s.scan(/[\w-]+$/).to_s
       attrs['comments_attr'] = attrs.delete('comments') if attrs['comments']
       attrs.update attrs.delete('group') if attrs['group']
-      attrs['keywords'] = attrs['keywords'].split(',').map(&:strip).map(&:downcase) if attrs['keywords']
       attrs
     end
 
@@ -198,7 +197,7 @@ Content-Transfer-Encoding: binary
           xml.media :description, attributes['description'], :type => 'plain'
           xml.media :category, attributes['category'], :scheme => 'http://gdata.youtube.com/schemas/2007/categories.cat'
 #          xml.media :category, "ytm_#{YT_CONFIG['developer_tag']}", :scheme => 'http://gdata.youtube.com/schemas/2007/developertags.cat'
-          xml.tag! 'media:keywords', attributes['keywords'].is_a?(Array) ? attributes['keywords'].join(', ') : attributes['keywords'].to_s
+          xml.tag! 'media:keywords', attributes['keywords'].to_s
         end
       end
       xml.target!
