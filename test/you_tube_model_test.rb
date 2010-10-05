@@ -33,6 +33,11 @@ class YouTubeModelTest < Test::Unit::TestCase
     assert Video.respond_to?(:top_rated), "custom finder is not associated to the YouTubeModel::Base"
   end
 
+  def test_uploaded_by
+    register_uri :get, "http://gdata.youtube.com/feeds/api/users/morphvfx/uploads?itemPerPage=10", 'videos'
+    @videos = Video.uploaded_by("morphvfx")
+    assert @videos.is_a?(YouTubeModel::Collection)
+  end
   def test_collection_finders
     register_uri :get, "http://gdata.youtube.com/feeds/api/standardfeeds/top_rated?itemPerPage=10&startIndex=5&time=all_time", 'videos'
     @videos = Video.top_rated(:startIndex => 5)
@@ -40,11 +45,13 @@ class YouTubeModelTest < Test::Unit::TestCase
     assert @videos.first.is_a?(Video)
     assert_equal "dMH0bHeiRNg", @videos.first.id
   end
+
   def test_collection_finder_with_session_token_passed
     register_uri :get, "http://gdata.youtube.com/feeds/api/users/default/uploads?itemPerPage=10", 'videos'
     @videos = Video.uploaded_by_user(:token => 'test_token')
     assert @videos.all?{|v| v.token == 'test_token'}
   end
+
   def test_singular_finder
     register_uri :get, "http://gdata.youtube.com/feeds/api/videos/dMH0bHeiRNg", 'video'
     @video = Video.find_by_id("dMH0bHeiRNg")
@@ -53,7 +60,6 @@ class YouTubeModelTest < Test::Unit::TestCase
     assert_equal "test", @video.description
     assert_equal 'io', @video.keywords
     assert_equal "Film", @video.category
-
   end
 
 

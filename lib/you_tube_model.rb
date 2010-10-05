@@ -11,6 +11,7 @@ end
 
 module YouTubeModel
   class TokenRequiredError < StandardError; end
+
   class Collection < Array
     attr_accessor :start_index, :items_per_page, :total_results
 
@@ -18,7 +19,7 @@ module YouTubeModel
       self.start_index = parsed_xml['startIndex'].to_i
       self.items_per_page = parsed_xml['itemsPerPage'].to_i
       self.total_results = parsed_xml['totalResults'].to_i
-      super([parsed_xml['entry']].flatten.map{|video| klass.new(video)})
+      super([parsed_xml['entry']].flatten.compact.map{|video| klass.new(video)})
     end
   end
 
@@ -54,7 +55,7 @@ module YouTubeModel
       options[:url] += query_string(default_youtube_options.dup.update(options[:params])).to_s if options[:params]
       options[:headers] = request_headers(options[:headers] || {})
       if [:post,:put].include? options[:method]
-        connection.send(options[:method], options[:url], options[:data].to_s, options[:headers])
+        connection.send(options[:method], options[:url], options[:data].to_s , options[:headers])
       else
         connection.send(options[:method], options[:url], options[:headers])
       end
